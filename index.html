@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Редактор: фон + блоки</title>
+<title>Редактор: фон + блоки + слои + стикеры + рамка</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,7 +44,7 @@
   .status.err { color: #dc2626; }
   .status.ok  { color: #16a34a; }
 
-  .panel { display: none; margin-top: 24px; width: 100%; max-width: 1100px; flex-direction: column; align-items: center; gap: 16px; }
+  .panel { display: none; margin-top: 24px; width: 100%; max-width: 1400px; flex-direction: column; align-items: center; gap: 16px; }
   .panel.show { display: flex; }
 
   .size-bar {
@@ -55,18 +55,28 @@
   }
   .size-bar button { padding: 5px 10px; font-size: 13px; border-radius: 6px; }
 
+  .main-area {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
   /* РЕДАКТОР */
   .editor-wrap {
     position: relative;
     width: 500px; height: 500px;
     min-width: 200px; min-height: 200px;
-    max-width: 95vw; max-height: 90vh;
+    max-width: 90vw; max-height: 80vh;
     resize: both;
     overflow: hidden;
     border: 2px solid #d0d0d8;
     border-radius: 12px;
     background: #fff;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    flex-shrink: 0;
   }
   .editor-wrap::after {
     content: '';
@@ -84,36 +94,65 @@
     overflow: hidden;
   }
 
+  /* Рамка (поверх всего, но под resize-handle) */
+  .frame-border {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 900;
+    border-radius: 0;
+    box-sizing: border-box;
+  }
+
   /* ===== Вырезанная картинка ===== */
   .cutout {
     position: absolute;
     cursor: move;
     user-select: none;
-    transform-origin: center center;
     touch-action: none;
   }
-  .cutout img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    user-select: none;
-  }
+  .cutout img { display: block; width: 100%; height: 100%; pointer-events: none; user-select: none; }
   .cutout:hover { outline: 1px dashed rgba(59,130,246,0.5); }
   .cutout.active { outline: 2px solid #3b82f6; }
   .cutout .handle {
-    position: absolute;
-    width: 14px; height: 14px;
-    background: #3b82f6;
-    border: 2px solid #fff;
-    border-radius: 50%;
+    position: absolute; width: 14px; height: 14px;
+    background: #3b82f6; border: 2px solid #fff; border-radius: 50%;
     display: none;
   }
   .cutout.active .handle { display: block; }
   .cutout .handle.br { right: -7px; bottom: -7px; cursor: nwse-resize; }
   .cutout .handle.tl { left: -7px; top: -7px; cursor: nwse-resize; }
 
-  /* ===== Текстовый блок (просто текст без фона) ===== */
+  /* ===== Стикер (картинка) ===== */
+  .sticker {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    touch-action: none;
+  }
+  .sticker img { display: block; width: 100%; height: 100%; pointer-events: none; user-select: none; }
+  .sticker:hover { outline: 1px dashed rgba(59,130,246,0.5); }
+  .sticker.active { outline: 2px solid #3b82f6; }
+  .sticker .handle {
+    position: absolute; width: 14px; height: 14px;
+    background: #3b82f6; border: 2px solid #fff; border-radius: 50%;
+    display: none;
+  }
+  .sticker.active .handle { display: block; }
+  .sticker .handle.br { right: -7px; bottom: -7px; cursor: nwse-resize; }
+  .sticker .handle.tl { left: -7px; top: -7px; cursor: nwse-resize; }
+  .sticker .del {
+    position: absolute; top: -10px; right: -10px;
+    width: 20px; height: 20px;
+    background: #ef4444; color: #fff;
+    border-radius: 50%; font-size: 12px; line-height: 20px;
+    text-align: center; cursor: pointer;
+    display: none; border: none; padding: 0;
+    z-index: 5;
+  }
+  .sticker.active .del { display: block; }
+
+  /* ===== Текстовый блок ===== */
   .text-block {
     position: absolute;
     cursor: move;
@@ -143,30 +182,14 @@
     position: absolute;
     cursor: move;
     user-select: none;
-    padding: 16px 20px;
-    border-radius: 12px;
-    min-width: 80px;
-    min-height: 40px;
+    min-width: 30px; min-height: 20px;
     border: 1px dashed transparent;
     touch-action: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    background: #3b82f6;
+    border-radius: 12px;
   }
   .color-block:hover { border-color: rgba(59,130,246,0.6); }
-  .color-block.active { border: 2px solid #3b82f6; }
-  .color-block .block-text {
-    outline: none;
-    cursor: text;
-    min-width: 20px;
-    line-height: 1.2;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
+  .color-block.active { outline: 2px solid #3b82f6; outline-offset: 2px; border-color: transparent; }
   .color-block .del {
     position: absolute; top: -10px; right: -10px;
     width: 20px; height: 20px;
@@ -178,19 +201,60 @@
   }
   .color-block.active .del { display: block; }
   .color-block .handle {
-    position: absolute;
-    width: 14px; height: 14px;
-    background: #3b82f6;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    display: none;
-    z-index: 4;
+    position: absolute; width: 14px; height: 14px;
+    background: #3b82f6; border: 2px solid #fff; border-radius: 50%;
+    display: none; z-index: 4;
   }
   .color-block.active .handle { display: block; }
   .color-block .handle.br { right: -7px; bottom: -7px; cursor: nwse-resize; }
   .color-block .handle.tl { left: -7px; top: -7px; cursor: nwse-resize; }
 
-  /* ===== Панели управления ===== */
+  /* ===== Панель слоёв ===== */
+  .layers-panel {
+    width: 260px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    flex-shrink: 0;
+    max-height: 700px;
+    display: flex;
+    flex-direction: column;
+  }
+  .layers-panel h3 {
+    font-size: 13px; color: #666; margin-bottom: 10px;
+    font-weight: 600; display: flex; justify-content: space-between; align-items: center;
+  }
+  .layers-panel h3 span { font-size: 11px; color: #aaa; font-weight: normal; }
+  .layers-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; }
+  .layer-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: #f7f7fa; border-radius: 8px;
+    font-size: 13px; cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.1s; user-select: none;
+  }
+  .layer-item:hover { background: #eef2ff; }
+  .layer-item.active { background: #eff6ff; border-color: #3b82f6; }
+  .layer-item.dragging { opacity: 0.5; }
+  .layer-item.drag-over { border-top: 2px solid #3b82f6; }
+  .layer-item .icon {
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .layer-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .layer-item .eye {
+    width: 22px; height: 22px;
+    border: none; background: transparent;
+    cursor: pointer; font-size: 14px; padding: 0;
+    opacity: 0.6; transition: 0.1s;
+  }
+  .layer-item .eye:hover { opacity: 1; }
+  .layer-item.hidden-layer { opacity: 0.5; }
+  .layer-item.hidden-layer .name { text-decoration: line-through; }
+
   .controls {
     display: none;
     gap: 10px;
@@ -202,7 +266,7 @@
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     width: 100%;
-    max-width: 1000px;
+    max-width: 1200px;
   }
   .controls.show { display: flex; }
   .controls input[type=text] {
@@ -223,8 +287,59 @@
     border-radius: 8px; font-size: 14px;
     background: #fff; cursor: pointer;
   }
+  .controls input[type=range] { cursor: pointer; }
   .ctrl-label { font-size: 12px; color: #888; }
   .ctrl-group { display: flex; align-items: center; gap: 6px; }
+  .ctrl-divider { width: 1px; height: 30px; background: #e0e0e8; margin: 0 4px; }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px; height: 22px;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute; cursor: pointer;
+    inset: 0; background: #ccc;
+    transition: 0.2s; border-radius: 22px;
+  }
+  .switch .slider:before {
+    position: absolute; content: "";
+    height: 16px; width: 16px; left: 3px; bottom: 3px;
+    background: white; transition: 0.2s; border-radius: 50%;
+  }
+  .switch input:checked + .slider { background: #3b82f6; }
+  .switch input:checked + .slider:before { transform: translateX(18px); }
+
+  /* ===== Галерея смайликов ===== */
+  .emoji-section {
+    width: 100%;
+    max-width: 900px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .emoji-section h3 {
+    font-size: 13px; color: #666; margin-bottom: 10px;
+    font-weight: 500; text-align: center;
+  }
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+    gap: 6px;
+  }
+  .emoji-item {
+    aspect-ratio: 1;
+    font-size: 30px;
+    background: #f7f7fa;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .emoji-item:hover { background: #eef2ff; transform: scale(1.1); }
 
   .bg-section { width: 100%; max-width: 700px; margin-top: 8px; }
   .bg-section h3 { font-size: 13px; color: #666; margin-bottom: 10px; text-align: center; font-weight: 500; }
@@ -265,8 +380,8 @@
 </head>
 <body>
 
-<h1>🪄 Редактор: фон + блоки</h1>
-<div class="sub">Загрузи картинку, убери фон, двигай её, добавляй текст и цветные блоки</div>
+<h1>🪄 Редактор: фон + стикеры + рамка</h1>
+<div class="sub">Картинка, стикеры, текст, плашки, слои, рамка — всё в одном</div>
 
 <div class="drop" id="drop">
   📁 Нажми или перетащи сюда картинку
@@ -275,6 +390,7 @@
 
 <input type="file" id="file" accept="image/*">
 <input type="file" id="bgUpload" accept="image/*">
+<input type="file" id="stickerUpload" accept="image/*">
 
 <div class="status" id="status"></div>
 
@@ -294,14 +410,21 @@
     <button data-size="1280x720">16:9</button>
   </div>
 
-  <!-- РЕДАКТОР -->
-  <div class="editor-wrap" id="editorWrap">
-    <div class="editor-stage" id="editorStage">
-      <div class="cutout" id="cutout" style="display:none">
-        <img id="cutoutImg" alt="">
-        <div class="handle tl"></div>
-        <div class="handle br"></div>
+  <div class="main-area">
+    <div class="editor-wrap" id="editorWrap">
+      <div class="editor-stage" id="editorStage">
+        <div class="cutout" id="cutout" style="display:none">
+          <img id="cutoutImg" alt="">
+          <div class="handle tl"></div>
+          <div class="handle br"></div>
+        </div>
       </div>
+      <div class="frame-border" id="frameBorder"></div>
+    </div>
+
+    <div class="layers-panel">
+      <h3>Слои <span>(перетащи для порядка)</span></h3>
+      <div class="layers-list" id="layersList"></div>
     </div>
   </div>
 
@@ -315,6 +438,23 @@
     </div>
     <button id="imgCenter">Центрировать</button>
     <button id="imgFit">Вписать</button>
+  </div>
+
+  <!-- Управление стикером -->
+  <div class="controls" id="stickerControls">
+    <span class="ctrl-label">Стикер:</span>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Поворот:</span>
+      <input type="range" id="stkRotate" min="-180" max="180" value="0" style="width:120px">
+      <span id="stkRotateLabel" style="font-size:12px;color:#666;width:35px">0°</span>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Прозр.:</span>
+      <input type="range" id="stkOpacity" min="0" max="100" value="100" style="width:100px">
+      <span id="stkOpacityLabel" style="font-size:12px;color:#666;width:35px">100%</span>
+    </div>
+    <button id="stkFlipH">↔ Отразить</button>
+    <button id="stkDelete">🗑 Удалить</button>
   </div>
 
   <!-- Управление текстом -->
@@ -354,52 +494,90 @@
         <option value="900">Чёрный</option>
       </select>
     </div>
+    <div class="ctrl-divider"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Подсветка:</span>
+      <label class="switch">
+        <input type="checkbox" id="txtOutlineOn">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Цвет:</span>
+      <input type="color" id="txtOutlineColor" value="#000000">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Толщина:</span>
+      <input type="range" id="txtOutlineWidth" min="1" max="20" value="3" style="width:100px">
+      <span id="txtOutlineLabel" style="font-size:12px;color:#666;width:35px">3px</span>
+    </div>
+    <div class="ctrl-divider"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Тень:</span>
+      <label class="switch">
+        <input type="checkbox" id="txtShadowOn" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
     <button id="txtDelete">🗑 Удалить</button>
   </div>
 
-  <!-- Управление цветным блоком -->
+  <!-- Управление плашкой -->
   <div class="controls" id="blockControls">
-    <span class="ctrl-label">Блок:</span>
-    <input type="text" id="blkText" placeholder="Текст в блоке...">
+    <span class="ctrl-label">Плашка:</span>
     <div class="ctrl-group">
-      <span class="ctrl-label">Фон:</span>
+      <span class="ctrl-label">Цвет:</span>
       <input type="color" id="blkBg" value="#3b82f6">
     </div>
     <div class="ctrl-group">
-      <span class="ctrl-label">Текст:</span>
-      <input type="color" id="blkColor" value="#ffffff">
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Шрифт:</span>
-      <select id="blkFont">
-        <option value="Inter">Inter</option>
-        <option value="Roboto">Roboto</option>
-        <option value="Montserrat">Montserrat</option>
-        <option value="Oswald">Oswald</option>
-        <option value="Playfair Display">Playfair Display</option>
-        <option value="Bebas Neue">Bebas Neue</option>
-        <option value="Lobster">Lobster</option>
-        <option value="Pacifico">Pacifico</option>
-        <option value="Caveat">Caveat</option>
-        <option value="Permanent Marker">Permanent Marker</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Размер:</span>
-      <input type="number" id="blkSize" value="20" min="8" max="200">
-    </div>
-    <div class="ctrl-group">
       <span class="ctrl-label">Скругл.:</span>
-      <input type="number" id="blkRadius" value="12" min="0" max="200">
+      <input type="number" id="blkRadius" value="12" min="0" max="500">
     </div>
     <div class="ctrl-group">
       <span class="ctrl-label">Прозр.:</span>
-      <input type="range" id="blkOpacity" min="0" max="100" value="100" style="width:80px">
+      <input type="range" id="blkOpacity" min="0" max="100" value="100" style="width:100px">
+      <span id="blkOpacityLabel" style="font-size:12px;color:#666;width:35px">100%</span>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Поворот:</span>
+      <input type="range" id="blkRotate" min="-180" max="180" value="0" style="width:100px">
+      <span id="blkRotateLabel" style="font-size:12px;color:#666;width:35px">0°</span>
     </div>
     <button id="blkDelete">🗑 Удалить</button>
   </div>
 
-  <!-- Фоны -->
+  <!-- Управление рамкой -->
+  <div class="controls" id="frameControls">
+    <span class="ctrl-label">Рамка:</span>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Вкл:</span>
+      <label class="switch">
+        <input type="checkbox" id="frameOn">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Цвет:</span>
+      <input type="color" id="frameColor" value="#000000">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Толщина:</span>
+      <input type="range" id="frameWidth" min="1" max="100" value="10" style="width:120px">
+      <span id="frameWidthLabel" style="font-size:12px;color:#666;width:35px">10px</span>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Скругл.:</span>
+      <input type="range" id="frameRadius" min="0" max="200" value="0" style="width:120px">
+      <span id="frameRadiusLabel" style="font-size:12px;color:#666;width:35px">0px</span>
+    </div>
+  </div>
+
+  <!-- Быстрые смайлики -->
+  <div class="emoji-section">
+    <h3>Быстрые смайлики — кликни, и он появится на холсте</h3>
+    <div class="emoji-grid" id="emojiGrid"></div>
+  </div>
+
   <div class="bg-section">
     <h3>Выбери фон</h3>
     <div class="bg-grid" id="bgGrid">
@@ -429,15 +607,15 @@
       <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80"></div>
       <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&q=80"></div>
       <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1200&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1554147090-e1221a04a025?w=1200&q=80"></div>
     </div>
   </div>
 
   <div class="actions">
     <label class="upload-btn" for="bgUpload">📷 Свой фон</label>
+    <label class="upload-btn" for="stickerUpload">🖼️ Свой стикер</label>
     <button id="addText">➕ Текст</button>
-    <button id="addBlock">➕ Цветной блок</button>
+    <button id="addBlock">➕ Плашка</button>
+    <button id="addFrame">⬛ Рамка</button>
     <button class="primary" id="dl">💾 Скачать PNG</button>
     <button id="reset">Сбросить</button>
   </div>
@@ -451,18 +629,33 @@ const drop = $('drop'), file = $('file'), status = $('status');
 const panel = $('panel'), editorWrap = $('editorWrap'), editorStage = $('editorStage');
 const dl = $('dl'), reset = $('reset');
 const bgGrid = $('bgGrid'), bgUpload = $('bgUpload');
+const stickerUpload = $('stickerUpload');
 const cutout = $('cutout'), cutoutImg = $('cutoutImg');
 const imgControls = $('imgControls'), imgScale = $('imgScale'), imgScaleLabel = $('imgScaleLabel');
 const imgCenter = $('imgCenter'), imgFit = $('imgFit');
+const stickerControls = $('stickerControls');
+const stkRotate = $('stkRotate'), stkRotateLabel = $('stkRotateLabel');
+const stkOpacity = $('stkOpacity'), stkOpacityLabel = $('stkOpacityLabel');
+const stkFlipH = $('stkFlipH'), stkDelete = $('stkDelete');
 const textControls = $('textControls');
 const txtContent = $('txtContent'), txtSize = $('txtSize'), txtColor = $('txtColor');
 const txtWeight = $('txtWeight'), txtFont = $('txtFont'), txtDelete = $('txtDelete');
+const txtOutlineOn = $('txtOutlineOn'), txtOutlineColor = $('txtOutlineColor');
+const txtOutlineWidth = $('txtOutlineWidth'), txtOutlineLabel = $('txtOutlineLabel');
+const txtShadowOn = $('txtShadowOn');
 const addTextBtn = $('addText');
 const blockControls = $('blockControls');
-const blkText = $('blkText'), blkBg = $('blkBg'), blkColor = $('blkColor');
-const blkFont = $('blkFont'), blkSize = $('blkSize'), blkRadius = $('blkRadius'), blkOpacity = $('blkOpacity');
+const blkBg = $('blkBg'), blkRadius = $('blkRadius'), blkOpacity = $('blkOpacity'), blkOpacityLabel = $('blkOpacityLabel');
+const blkRotate = $('blkRotate'), blkRotateLabel = $('blkRotateLabel');
 const blkDelete = $('blkDelete'), addBlockBtn = $('addBlock');
+const frameControls = $('frameControls'), frameBorder = $('frameBorder');
+const frameOn = $('frameOn'), frameColor = $('frameColor');
+const frameWidth = $('frameWidth'), frameWidthLabel = $('frameWidthLabel');
+const frameRadius = $('frameRadius'), frameRadiusLabel = $('frameRadiusLabel');
+const addFrameBtn = $('addFrame');
+const emojiGrid = $('emojiGrid');
 const sizeUp = $('sizeUp'), sizeDown = $('sizeDown'), sizeLabel = $('sizeLabel');
+const layersList = $('layersList');
 
 const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
 
@@ -470,17 +663,14 @@ let resultDataUrl = null;
 let currentBg = { type: 'transparent' };
 let activeText = null;
 let activeBlock = null;
+let activeSticker = null;
 let zCounter = 10;
-
-// Позиция и масштаб вырезанной картинки
 let cutoutState = { x: 0, y: 0, w: 0, h: 0, naturalW: 0, naturalH: 0 };
 
-function setStatus(text, cls = '') {
-  status.className = 'status ' + cls;
-  status.innerHTML = text;
-}
+// Смайлики для быстрой вставки
+const emojis = ['😀','😂','🥰','😎','🤩','🥳','😇','🤔','🤯','😴','🤖','👽','💀','👻','🎃','🐱','🐶','🦊','🐼','🦁','🐸','🦄','🐉','🌸','🌺','🌈','⭐','✨','💫','🔥','💧','❄️','⚡','💥','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','💪','✌️','🤝','👑','💎','🎯','🎨','🎭','🎁','🎉','🎊','🏆','🥇','⚽','🏀','🎮','🎲','🍕','🍔','🍟','🍩','🍰','🍦','🍓','🍉','☕','🍺'];
 
-// ==== Загрузка картинки ====
+// ============ ЗАГРУЗКА КАРТИНКИ ============
 drop.addEventListener('click', () => file.click());
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -489,9 +679,7 @@ drop.addEventListener('drop', e => {
   drop.classList.remove('over');
   if (e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
 });
-file.addEventListener('change', e => {
-  if (e.target.files[0]) process(e.target.files[0]);
-});
+file.addEventListener('change', e => { if (e.target.files[0]) process(e.target.files[0]); });
 
 async function process(f) {
   if (!f.type.startsWith('image/')) { setStatus('❌ Это не картинка', 'err'); return; }
@@ -519,6 +707,8 @@ async function process(f) {
       cutoutState.naturalH = cutoutImg.naturalHeight;
       fitCutout();
       cutout.style.display = 'block';
+      getLayerId(cutout);
+      rebuildLayers();
     };
     dl.disabled = false;
     setStatus('✅ Готово!', 'ok');
@@ -537,7 +727,7 @@ function blobToDataURL(blob) {
   });
 }
 
-// ==== Управление вырезанной картинкой ====
+// ============ КАРТИНКА ============
 function fitCutout() {
   const stageW = editorStage.clientWidth;
   const stageH = editorStage.clientHeight;
@@ -550,14 +740,12 @@ function fitCutout() {
   imgScale.value = 100;
   imgScaleLabel.textContent = '100%';
 }
-
 function applyCutout() {
   cutout.style.left = cutoutState.x + 'px';
   cutout.style.top = cutoutState.y + 'px';
   cutout.style.width = cutoutState.w + 'px';
   cutout.style.height = cutoutState.h + 'px';
 }
-
 imgScale.addEventListener('input', () => {
   const pct = parseInt(imgScale.value);
   imgScaleLabel.textContent = pct + '%';
@@ -574,20 +762,15 @@ imgScale.addEventListener('input', () => {
   cutoutState.y = cy - cutoutState.h / 2;
   applyCutout();
 });
-
 imgCenter.addEventListener('click', () => {
-  const stageW = editorStage.clientWidth;
-  const stageH = editorStage.clientHeight;
-  cutoutState.x = (stageW - cutoutState.w) / 2;
-  cutoutState.y = (stageH - cutoutState.h) / 2;
+  cutoutState.x = (editorStage.clientWidth - cutoutState.w) / 2;
+  cutoutState.y = (editorStage.clientHeight - cutoutState.h) / 2;
   applyCutout();
 });
-
 imgFit.addEventListener('click', fitCutout);
 
-// Перетаскивание картинки
 makeDraggable(cutout, {
-  onStart: () => { selectCutout(); },
+  onStart: () => selectCutout(),
   onMove: (dx, dy, start) => {
     cutoutState.x = start.x + dx;
     cutoutState.y = start.y + dy;
@@ -595,8 +778,6 @@ makeDraggable(cutout, {
   },
   getStart: () => ({ x: cutoutState.x, y: cutoutState.y })
 });
-
-// Ресайз за уголки
 makeResizable(cutout, () => {
   cutoutState.w = cutout.offsetWidth;
   cutoutState.h = cutout.offsetHeight;
@@ -607,27 +788,122 @@ makeResizable(cutout, () => {
 function selectCutout() {
   cutout.classList.add('active');
   hideAllControls();
+  deselectText(); deselectBlock(); deselectSticker();
   imgControls.classList.add('show');
-  deselectText();
-  deselectBlock();
+  highlightLayer(cutout);
 }
 
-editorStage.addEventListener('click', e => {
-  if (e.target === editorStage) {
-    cutout.classList.remove('active');
-    hideAllControls();
-    deselectText();
-    deselectBlock();
-  }
+// ============ СТИКЕРЫ / ЭМОДЗИ ============
+function addSticker(src) {
+  const el = document.createElement('div');
+  el.className = 'sticker';
+  const size = 120;
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.left = '100px';
+  el.style.top = '100px';
+  el.style.zIndex = ++zCounter;
+  el.dataset.rotate = 0;
+  el.dataset.flip = 'off';
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = 'Стикер';
+  el.appendChild(img);
+
+  const del = document.createElement('button');
+  del.className = 'del';
+  del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
+  el.appendChild(del);
+
+  const h1 = document.createElement('div'); h1.className = 'handle tl'; el.appendChild(h1);
+  const h2 = document.createElement('div'); h2.className = 'handle br'; el.appendChild(h2);
+
+  editorStage.appendChild(el);
+  makeDraggable(el, { onStart: () => selectSticker(el) });
+  makeResizable(el, null);
+  selectSticker(el);
+  rebuildLayers();
+  return el;
+}
+
+// Сгенерировать SVG-картинку с эмодзи
+function emojiToSvgUrl(emoji) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+    <text x="100" y="100" font-size="170" text-anchor="middle" dominant-baseline="central" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">${emoji}</text>
+  </svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+// Заполняем галерею эмодзи
+emojis.forEach(e => {
+  const btn = document.createElement('button');
+  btn.className = 'emoji-item';
+  btn.textContent = e;
+  btn.addEventListener('click', () => addSticker(emojiToSvgUrl(e)));
+  emojiGrid.appendChild(btn);
 });
 
-function hideAllControls() {
-  imgControls.classList.remove('show');
-  textControls.classList.remove('show');
-  blockControls.classList.remove('show');
+// Загрузка своей картинки как стикера
+stickerUpload.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  addSticker(url);
+  stickerUpload.value = '';
+});
+
+function selectSticker(el) {
+  cutout.classList.remove('active');
+  deselectText(); deselectBlock();
+  document.querySelectorAll('.sticker').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  activeSticker = el;
+  hideAllControls();
+  stickerControls.classList.add('show');
+
+  const rot = parseFloat(el.dataset.rotate || 0);
+  stkRotate.value = rot;
+  stkRotateLabel.textContent = rot + '°';
+  const op = Math.round(parseFloat(el.style.opacity || 1) * 100);
+  stkOpacity.value = op;
+  stkOpacityLabel.textContent = op + '%';
+  highlightLayer(el);
 }
 
-// ==== Размер редактора ====
+function deselectSticker() {
+  document.querySelectorAll('.sticker').forEach(s => s.classList.remove('active'));
+  activeSticker = null;
+}
+
+function applyStickerTransform(el) {
+  const rot = parseFloat(el.dataset.rotate || 0);
+  const flip = el.dataset.flip === 'on';
+  el.style.transform = `rotate(${rot}deg) scaleX(${flip ? -1 : 1})`;
+}
+
+stkRotate.addEventListener('input', () => {
+  if (!activeSticker) return;
+  stkRotateLabel.textContent = stkRotate.value + '°';
+  activeSticker.dataset.rotate = stkRotate.value;
+  applyStickerTransform(activeSticker);
+});
+stkOpacity.addEventListener('input', () => {
+  if (!activeSticker) return;
+  stkOpacityLabel.textContent = stkOpacity.value + '%';
+  activeSticker.style.opacity = stkOpacity.value / 100;
+});
+stkFlipH.addEventListener('click', () => {
+  if (!activeSticker) return;
+  activeSticker.dataset.flip = activeSticker.dataset.flip === 'on' ? 'off' : 'on';
+  applyStickerTransform(activeSticker);
+});
+stkDelete.addEventListener('click', () => {
+  if (activeSticker) { activeSticker.remove(); hideAllControls(); activeSticker = null; rebuildLayers(); }
+});
+
+// ============ РАЗМЕР РЕДАКТОРА ============
 function updateSizeLabel() {
   sizeLabel.textContent = editorWrap.clientWidth + ' × ' + editorWrap.clientHeight;
 }
@@ -651,7 +927,39 @@ document.querySelectorAll('.size-bar button[data-size]').forEach(btn => {
 });
 new ResizeObserver(updateSizeLabel).observe(editorWrap);
 
-// ==== Фоны ====
+// ============ РАМКА ============
+function applyFrame() {
+  const on = frameOn.checked;
+  const w = parseInt(frameWidth.value);
+  const r = parseInt(frameRadius.value);
+  const c = frameColor.value;
+  if (!on) {
+    frameBorder.style.border = 'none';
+    frameBorder.style.display = 'none';
+    return;
+  }
+  frameBorder.style.display = 'block';
+  frameBorder.style.border = `${w}px solid ${c}`;
+  frameBorder.style.borderRadius = r + 'px';
+}
+frameOn.addEventListener('change', applyFrame);
+frameColor.addEventListener('input', applyFrame);
+frameWidth.addEventListener('input', () => {
+  frameWidthLabel.textContent = frameWidth.value + 'px';
+  applyFrame();
+});
+frameRadius.addEventListener('input', () => {
+  frameRadiusLabel.textContent = frameRadius.value + 'px';
+  applyFrame();
+});
+addFrameBtn.addEventListener('click', () => {
+  frameOn.checked = true;
+  applyFrame();
+  frameControls.classList.add('show');
+  frameControls.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+// ============ ФОНЫ ============
 bgGrid.addEventListener('click', e => {
   const item = e.target.closest('.bg-item');
   if (!item) return;
@@ -697,12 +1005,10 @@ bgUpload.addEventListener('change', e => {
   bgGrid.prepend(item);
 });
 
-// ==== Универсальный drag ====
+// ============ DRAG ============
 function makeDraggable(el, opts) {
   let dragging = false, startX, startY, start;
-
   const onDown = (cx, cy) => {
-    if (el.querySelector('.block-text') && document.activeElement.isContentEditable) return;
     dragging = true;
     startX = cx; startY = cy;
     start = opts.getStart ? opts.getStart() : { x: el.offsetLeft, y: el.offsetTop };
@@ -723,7 +1029,6 @@ function makeDraggable(el, opts) {
 
   el.addEventListener('mousedown', e => {
     if (e.target.classList.contains('del') || e.target.classList.contains('handle')) return;
-    if (e.target.classList.contains('block-text')) return;
     onDown(e.clientX, e.clientY);
     e.preventDefault();
   });
@@ -732,7 +1037,6 @@ function makeDraggable(el, opts) {
 
   el.addEventListener('touchstart', e => {
     if (e.target.classList.contains('del') || e.target.classList.contains('handle')) return;
-    if (e.target.classList.contains('block-text')) return;
     const t = e.touches[0];
     onDown(t.clientX, t.clientY);
   }, { passive: true });
@@ -744,12 +1048,10 @@ function makeDraggable(el, opts) {
   document.addEventListener('touchend', onUp);
 }
 
-// ==== Универсальный resize за уголки ====
 function makeResizable(el, onChange) {
   const handles = el.querySelectorAll('.handle');
   handles.forEach(h => {
     let resizing = false, startX, startY, startW, startH, startL, startT, dir;
-
     const start = (cx, cy) => {
       resizing = true;
       startX = cx; startY = cy;
@@ -765,12 +1067,11 @@ function makeResizable(el, onChange) {
       const dy = cy - startY;
       let w, hh, l, t;
       if (dir === 'br') {
-        w = Math.max(30, startW + dx);
+        w = Math.max(20, startW + dx);
         hh = Math.max(20, startH + dy);
-        l = startL;
-        t = startT;
+        l = startL; t = startT;
       } else {
-        w = Math.max(30, startW - dx);
+        w = Math.max(20, startW - dx);
         hh = Math.max(20, startH - dy);
         l = startL + (startW - w);
         t = startT + (startH - hh);
@@ -785,8 +1086,7 @@ function makeResizable(el, onChange) {
 
     h.addEventListener('mousedown', e => {
       start(e.clientX, e.clientY);
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
     });
     document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
     document.addEventListener('mouseup', end);
@@ -805,39 +1105,178 @@ function makeResizable(el, onChange) {
   });
 }
 
-// ==== Текстовый блок ====
+// ============ СЛОИ ============
+function getLayers() {
+  const layers = [];
+  if (cutout.style.display !== 'none' && cutoutImg.src) {
+    layers.push({ el: cutout, name: 'Картинка', icon: '🖼️' });
+  }
+  editorStage.querySelectorAll('.sticker, .text-block, .color-block').forEach(el => {
+    if (el.classList.contains('sticker')) {
+      layers.push({ el, name: 'Стикер', icon: '😀' });
+    } else if (el.classList.contains('text-block')) {
+      let text = '';
+      for (const n of el.childNodes) if (n.nodeType === 3) text += n.nodeValue;
+      layers.push({ el, name: text.slice(0, 20) || 'Текст', icon: '📝' });
+    } else {
+      layers.push({ el, name: 'Плашка', icon: '🟦' });
+    }
+  });
+  layers.sort((a, b) => (parseInt(b.el.style.zIndex) || 0) - (parseInt(a.el.style.zIndex) || 0));
+  return layers;
+}
+
+function rebuildLayers() {
+  const layers = getLayers();
+  layersList.innerHTML = '';
+  layers.forEach(layer => {
+    const item = document.createElement('div');
+    item.className = 'layer-item';
+    if (layer.el.classList.contains('active')) item.classList.add('active');
+    if (layer.el.style.display === 'none') item.classList.add('hidden-layer');
+    item.draggable = true;
+    item.dataset.layerId = getLayerId(layer.el);
+
+    const icon = document.createElement('div');
+    icon.className = 'icon'; icon.textContent = layer.icon;
+    item.appendChild(icon);
+
+    const name = document.createElement('div');
+    name.className = 'name'; name.textContent = layer.name;
+    item.appendChild(name);
+
+    const eye = document.createElement('button');
+    eye.className = 'eye';
+    eye.textContent = layer.el.style.display === 'none' ? '🚫' : '👁';
+    eye.addEventListener('click', e => {
+      e.stopPropagation();
+      layer.el.style.display = layer.el.style.display === 'none' ? '' : 'none';
+      rebuildLayers();
+    });
+    item.appendChild(eye);
+
+    item.addEventListener('click', () => selectLayer(layer.el));
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', item.dataset.layerId);
+      item.classList.add('dragging');
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const fromId = e.dataTransfer.getData('text/plain');
+      const toId = item.dataset.layerId;
+      if (fromId === toId) return;
+      reorderLayer(fromId, toId);
+    });
+
+    layersList.appendChild(item);
+  });
+}
+
+function getLayerId(el) {
+  if (!el.dataset.layerId) {
+    el.dataset.layerId = 'layer_' + Math.random().toString(36).slice(2, 9);
+  }
+  return el.dataset.layerId;
+}
+
+function reorderLayer(fromId, toId) {
+  const fromEl = editorStage.querySelector(`[data-layer-id="${fromId}"]`);
+  const toEl = editorStage.querySelector(`[data-layer-id="${toId}"]`);
+  if (!fromEl || !toEl) return;
+  const fromZ = parseInt(fromEl.style.zIndex) || 0;
+  const toZ = parseInt(toEl.style.zIndex) || 0;
+  if (fromZ < toZ) {
+    fromEl.style.zIndex = toZ + 1;
+    editorStage.querySelectorAll('[data-layer-id]').forEach(el => {
+      if (el === fromEl || el === toEl) return;
+      const z = parseInt(el.style.zIndex) || 0;
+      if (z > toZ && z <= fromZ) el.style.zIndex = z - 1;
+    });
+  } else {
+    fromEl.style.zIndex = toZ - 1;
+    editorStage.querySelectorAll('[data-layer-id]').forEach(el => {
+      if (el === fromEl || el === toEl) return;
+      const z = parseInt(el.style.zIndex) || 0;
+      if (z < toZ && z >= fromZ) el.style.zIndex = z + 1;
+    });
+  }
+  zCounter = Math.max(zCounter, ...getLayers().map(l => parseInt(l.el.style.zIndex) || 0)) + 1;
+  rebuildLayers();
+}
+
+function selectLayer(el) {
+  if (el === cutout) { selectCutout(); return; }
+  if (el.classList.contains('sticker')) { selectSticker(el); return; }
+  if (el.classList.contains('text-block')) { selectText(el); return; }
+  if (el.classList.contains('color-block')) { selectBlock(el); return; }
+}
+function highlightLayer(el) {
+  const id = getLayerId(el);
+  layersList.querySelectorAll('.layer-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.layerId === id);
+  });
+}
+
+// ============ ТЕКСТ ============
 addTextBtn.addEventListener('click', () => {
   const el = document.createElement('div');
   el.className = 'text-block';
   el.textContent = 'Ваш текст';
-  el.style.left = '40px';
-  el.style.top = '40px';
-  el.style.fontSize = '32px';
-  el.style.color = '#ffffff';
+  el.style.left = '40px'; el.style.top = '40px';
+  el.style.fontSize = '32px'; el.style.color = '#ffffff';
   el.style.fontWeight = '700';
   el.style.fontFamily = "'Inter', sans-serif";
   el.style.zIndex = ++zCounter;
   el.style.textShadow = '0 2px 8px rgba(0,0,0,0.4)';
+  el.dataset.outline = 'off';
+  el.dataset.outlineColor = '#000000';
+  el.dataset.outlineWidth = '3';
+  el.dataset.shadow = 'on';
 
   const del = document.createElement('button');
-  del.className = 'del';
-  del.textContent = '×';
-  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); });
+  del.className = 'del'; del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
   el.appendChild(del);
 
   editorStage.appendChild(el);
   makeDraggable(el, { onStart: () => selectText(el) });
   selectText(el);
+  rebuildLayers();
 });
 
+function applyTextStyle(el) {
+  const outline = el.dataset.outline === 'on';
+  const outlineColor = el.dataset.outlineColor || '#000000';
+  const outlineWidth = parseInt(el.dataset.outlineWidth || 3);
+  const shadow = el.dataset.shadow === 'on';
+  const shadows = [];
+  if (outline) {
+    const w = outlineWidth;
+    for (let x = -w; x <= w; x++) {
+      for (let y = -w; y <= w; y++) {
+        if (x === 0 && y === 0) continue;
+        if (Math.abs(x) + Math.abs(y) > w + 1) continue;
+        shadows.push(`${x}px ${y}px 0 ${outlineColor}`);
+      }
+    }
+  }
+  if (shadow) shadows.push('0 2px 8px rgba(0,0,0,0.4)');
+  el.style.textShadow = shadows.length ? shadows.join(', ') : 'none';
+}
+
 function selectText(el) {
-  deselectBlock();
+  deselectBlock(); deselectSticker();
   cutout.classList.remove('active');
   document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   activeText = el;
   hideAllControls();
   textControls.classList.add('show');
+
   for (const n of el.childNodes) {
     if (n.nodeType === 3 && n.nodeValue.trim()) { txtContent.value = n.nodeValue; break; }
   }
@@ -845,11 +1284,14 @@ function selectText(el) {
   txtColor.value = rgbToHex(el.style.color) || '#ffffff';
   txtWeight.value = el.style.fontWeight || '700';
   const fam = el.style.fontFamily || '';
-  for (const opt of txtFont.options) {
-    if (fam.includes(opt.value)) { txtFont.value = opt.value; break; }
-  }
+  for (const opt of txtFont.options) if (fam.includes(opt.value)) { txtFont.value = opt.value; break; }
+  txtOutlineOn.checked = el.dataset.outline === 'on';
+  txtOutlineColor.value = el.dataset.outlineColor || '#000000';
+  txtOutlineWidth.value = el.dataset.outlineWidth || 3;
+  txtOutlineLabel.textContent = (el.dataset.outlineWidth || 3) + 'px';
+  txtShadowOn.checked = el.dataset.shadow !== 'off';
+  highlightLayer(el);
 }
-
 function deselectText() {
   document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
   activeText = null;
@@ -862,117 +1304,106 @@ txtContent.addEventListener('input', () => {
     if (n.nodeType === 3) { n.nodeValue = txtContent.value; found = true; break; }
   }
   if (!found) activeText.insertBefore(document.createTextNode(txtContent.value), activeText.firstChild);
+  rebuildLayers();
 });
 txtSize.addEventListener('input', () => { if (activeText) activeText.style.fontSize = txtSize.value + 'px'; });
 txtColor.addEventListener('input', () => { if (activeText) activeText.style.color = txtColor.value; });
 txtWeight.addEventListener('change', () => { if (activeText) activeText.style.fontWeight = txtWeight.value; });
 txtFont.addEventListener('change', () => { if (activeText) activeText.style.fontFamily = `'${txtFont.value}', sans-serif`; });
-txtDelete.addEventListener('click', () => { if (activeText) { activeText.remove(); hideAllControls(); activeText = null; } });
+txtOutlineOn.addEventListener('change', () => { if (!activeText) return; activeText.dataset.outline = txtOutlineOn.checked ? 'on' : 'off'; applyTextStyle(activeText); });
+txtOutlineColor.addEventListener('input', () => { if (!activeText) return; activeText.dataset.outlineColor = txtOutlineColor.value; applyTextStyle(activeText); });
+txtOutlineWidth.addEventListener('input', () => {
+  txtOutlineLabel.textContent = txtOutlineWidth.value + 'px';
+  if (!activeText) return;
+  activeText.dataset.outlineWidth = txtOutlineWidth.value;
+  applyTextStyle(activeText);
+});
+txtShadowOn.addEventListener('change', () => { if (!activeText) return; activeText.dataset.shadow = txtShadowOn.checked ? 'on' : 'off'; applyTextStyle(activeText); });
+txtDelete.addEventListener('click', () => { if (activeText) { activeText.remove(); hideAllControls(); activeText = null; rebuildLayers(); } });
 
-// ==== Цветной блок ====
+// ============ ПЛАШКА ============
 addBlockBtn.addEventListener('click', () => {
   const el = document.createElement('div');
   el.className = 'color-block';
-  el.style.left = '80px';
-  el.style.top = '80px';
-  el.style.width = '200px';
-  el.style.height = '80px';
+  el.style.left = '80px'; el.style.top = '80px';
+  el.style.width = '200px'; el.style.height = '100px';
   el.style.background = '#3b82f6';
   el.style.borderRadius = '12px';
   el.style.zIndex = ++zCounter;
 
-  const txt = document.createElement('div');
-  txt.className = 'block-text';
-  txt.contentEditable = 'true';
-  txt.textContent = 'Текст';
-  txt.style.color = '#ffffff';
-  txt.style.fontFamily = "'Inter', sans-serif";
-  txt.style.fontSize = '20px';
-  txt.style.fontWeight = '600';
-  el.appendChild(txt);
-
   const del = document.createElement('button');
-  del.className = 'del';
-  del.textContent = '×';
-  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); });
+  del.className = 'del'; del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
   el.appendChild(del);
-
-  const h1 = document.createElement('div');
-  h1.className = 'handle tl';
-  el.appendChild(h1);
-  const h2 = document.createElement('div');
-  h2.className = 'handle br';
-  el.appendChild(h2);
+  const h1 = document.createElement('div'); h1.className = 'handle tl'; el.appendChild(h1);
+  const h2 = document.createElement('div'); h2.className = 'handle br'; el.appendChild(h2);
 
   editorStage.appendChild(el);
   makeDraggable(el, { onStart: () => selectBlock(el) });
   makeResizable(el, null);
   selectBlock(el);
+  rebuildLayers();
 });
 
 function selectBlock(el) {
-  deselectText();
+  deselectText(); deselectSticker();
   cutout.classList.remove('active');
   document.querySelectorAll('.color-block').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   activeBlock = el;
   hideAllControls();
   blockControls.classList.add('show');
-
-  const txt = el.querySelector('.block-text');
-  blkText.value = txt.textContent;
   blkBg.value = rgbToHex(el.style.background || el.style.backgroundColor) || '#3b82f6';
-  blkColor.value = rgbToHex(txt.style.color) || '#ffffff';
-  blkSize.value = parseInt(txt.style.fontSize) || 20;
   blkRadius.value = parseInt(el.style.borderRadius) || 12;
-  const fam = txt.style.fontFamily || '';
-  for (const opt of blkFont.options) {
-    if (fam.includes(opt.value)) { blkFont.value = opt.value; break; }
-  }
+  const op = Math.round(parseFloat(el.style.opacity || 1) * 100);
+  blkOpacity.value = op; blkOpacityLabel.textContent = op + '%';
+  const rot = parseFloat(el.dataset.rotate || 0);
+  blkRotate.value = rot; blkRotateLabel.textContent = rot + '°';
+  highlightLayer(el);
 }
-
 function deselectBlock() {
   document.querySelectorAll('.color-block').forEach(b => b.classList.remove('active'));
   activeBlock = null;
 }
-
-blkText.addEventListener('input', () => {
-  if (!activeBlock) return;
-  activeBlock.querySelector('.block-text').textContent = blkText.value;
-});
-blkBg.addEventListener('input', () => {
-  if (!activeBlock) return;
-  activeBlock.style.background = blkBg.value;
-});
-blkColor.addEventListener('input', () => {
-  if (!activeBlock) return;
-  activeBlock.querySelector('.block-text').style.color = blkColor.value;
-});
-blkFont.addEventListener('change', () => {
-  if (!activeBlock) return;
-  activeBlock.querySelector('.block-text').style.fontFamily = `'${blkFont.value}', sans-serif`;
-});
-blkSize.addEventListener('input', () => {
-  if (!activeBlock) return;
-  activeBlock.querySelector('.block-text').style.fontSize = blkSize.value + 'px';
-});
-blkRadius.addEventListener('input', () => {
-  if (!activeBlock) return;
-  activeBlock.style.borderRadius = blkRadius.value + 'px';
-});
+blkBg.addEventListener('input', () => { if (activeBlock) activeBlock.style.background = blkBg.value; });
+blkRadius.addEventListener('input', () => { if (activeBlock) activeBlock.style.borderRadius = blkRadius.value + 'px'; });
 blkOpacity.addEventListener('input', () => {
   if (!activeBlock) return;
+  blkOpacityLabel.textContent = blkOpacity.value + '%';
   activeBlock.style.opacity = blkOpacity.value / 100;
 });
+blkRotate.addEventListener('input', () => {
+  if (!activeBlock) return;
+  blkRotateLabel.textContent = blkRotate.value + '°';
+  activeBlock.dataset.rotate = blkRotate.value;
+  activeBlock.style.transform = `rotate(${blkRotate.value}deg)`;
+});
 blkDelete.addEventListener('click', () => {
-  if (activeBlock) { activeBlock.remove(); hideAllControls(); activeBlock = null; }
+  if (activeBlock) { activeBlock.remove(); hideAllControls(); activeBlock = null; rebuildLayers(); }
 });
 
-// Редактирование текста блока прямо на месте
+// ============ КЛИКИ ============
 editorStage.addEventListener('click', e => {
+  const sticker = e.target.closest('.sticker');
   const block = e.target.closest('.color-block');
-  if (block) selectBlock(block);
+  const text = e.target.closest('.text-block');
+  if (sticker) { selectSticker(sticker); return; }
+  if (block) { selectBlock(block); return; }
+  if (text) { selectText(text); return; }
+  if (e.target === editorStage) {
+    cutout.classList.remove('active');
+    hideAllControls();
+    deselectText(); deselectBlock(); deselectSticker();
+    rebuildLayers();
+  }
 });
+
+function hideAllControls() {
+  imgControls.classList.remove('show');
+  stickerControls.classList.remove('show');
+  textControls.classList.remove('show');
+  blockControls.classList.remove('show');
+}
 
 function rgbToHex(rgb) {
   if (!rgb) return null;
@@ -983,7 +1414,7 @@ function rgbToHex(rgb) {
   return '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('');
 }
 
-// ==== Скачивание ====
+// ============ СКАЧИВАНИЕ ============
 dl.addEventListener('click', async () => {
   if (!resultDataUrl) return;
   const W = editorWrap.clientWidth;
@@ -999,14 +1430,12 @@ dl.addEventListener('click', async () => {
   if (currentBg.type === 'transparent') {
     // пусто
   } else if (currentBg.type === 'color') {
-    ctx.fillStyle = currentBg.color;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = currentBg.color; ctx.fillRect(0, 0, W, H);
   } else if (currentBg.type === 'gradient') {
     const grad = ctx.createLinearGradient(0, 0, W, H);
     const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
     colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
   } else if (currentBg.type === 'image') {
     const bgImg = new Image();
     bgImg.crossOrigin = 'anonymous';
@@ -1018,34 +1447,52 @@ dl.addEventListener('click', async () => {
       const bh = bgImg.height * bgScale;
       ctx.drawImage(bgImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
     } catch (e) {
-      ctx.fillStyle = '#eee';
-      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#eee'; ctx.fillRect(0, 0, W, H);
     }
   }
 
-  // Сортируем всё по z-index
   const allElements = [...editorStage.children].filter(el =>
     el.classList.contains('cutout') ||
+    el.classList.contains('sticker') ||
     el.classList.contains('text-block') ||
     el.classList.contains('color-block')
   );
   allElements.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
 
-  // Ждём шрифты
   if (document.fonts) await document.fonts.ready;
 
   for (const el of allElements) {
-    if (el === cutout && cutout.style.display !== 'none') {
-      // Картинка
+    if (el.style.display === 'none') continue;
+
+    if (el === cutout) {
       const base = new Image();
       base.src = resultDataUrl;
       await base.decode();
       ctx.drawImage(base, cutoutState.x, cutoutState.y, cutoutState.w, cutoutState.h);
+    } else if (el.classList.contains('sticker')) {
+      const x = parseFloat(el.style.left) || 0;
+      const y = parseFloat(el.style.top) || 0;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const rot = parseFloat(el.dataset.rotate || 0);
+      const flip = el.dataset.flip === 'on';
+      const op = parseFloat(el.style.opacity || 1);
+      const img = el.querySelector('img');
+      try {
+        await img.decode();
+        ctx.save();
+        ctx.globalAlpha = op;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(rot * Math.PI / 180);
+        ctx.scale(flip ? -1 : 1, 1);
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        ctx.restore();
+      } catch (e) { console.warn(e); }
     } else if (el.classList.contains('text-block')) {
       let text = '';
-      for (const n of el.childNodes) {
-        if (n.nodeType === 3) text += n.nodeValue;
-      }
+      for (const n of el.childNodes) if (n.nodeType === 3) text += n.nodeValue;
       const x = parseFloat(el.style.left) || 0;
       const y = parseFloat(el.style.top) || 0;
       const fontSize = parseFloat(el.style.fontSize) || 32;
@@ -1053,15 +1500,30 @@ dl.addEventListener('click', async () => {
       const color = el.style.color || '#fff';
       const fontFamily = el.style.fontFamily || "'Inter', sans-serif";
       ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-      ctx.fillStyle = color;
       ctx.textBaseline = 'top';
-      ctx.shadowColor = 'rgba(0,0,0,0.4)';
-      ctx.shadowBlur = 8;
-      ctx.shadowOffsetY = 2;
-      ctx.fillText(text, x + 8, y + 4);
+
+      const outline = el.dataset.outline === 'on';
+      const outlineColor = el.dataset.outlineColor || '#000000';
+      const outlineWidth = parseInt(el.dataset.outlineWidth || 3);
+      const shadow = el.dataset.shadow !== 'off';
+
+      if (shadow) {
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+      }
+      if (outline) {
+        ctx.fillStyle = outlineColor;
+        for (let r = 1; r <= outlineWidth; r++) {
+          for (let ang = 0; ang < 360; ang += 30) {
+            const rad = ang * Math.PI / 180;
+            ctx.fillText(text, x + 8 + Math.cos(rad) * r, y + 4 + Math.sin(rad) * r);
+          }
+        }
+      }
       ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x + 8, y + 4);
     } else if (el.classList.contains('color-block')) {
       const x = parseFloat(el.style.left) || 0;
       const y = parseFloat(el.style.top) || 0;
@@ -1070,29 +1532,40 @@ dl.addEventListener('click', async () => {
       const radius = parseFloat(el.style.borderRadius) || 0;
       const bg = el.style.background || el.style.backgroundColor || '#3b82f6';
       const opacity = parseFloat(el.style.opacity || 1);
+      const rot = parseFloat(el.dataset.rotate || 0);
 
       ctx.save();
       ctx.globalAlpha = opacity;
+      if (rot) {
+        const cx = x + w / 2; const cy = y + h / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(rot * Math.PI / 180);
+        ctx.translate(-cx, -cy);
+      }
       roundRect(ctx, x, y, w, h, radius);
       ctx.fillStyle = bg;
       ctx.fill();
       ctx.restore();
-
-      // Текст внутри
-      const txt = el.querySelector('.block-text');
-      const text = txt.textContent;
-      const fontSize = parseFloat(txt.style.fontSize) || 20;
-      const fontWeight = txt.style.fontWeight || '600';
-      const color = txt.style.color || '#fff';
-      const fontFamily = txt.style.fontFamily || "'Inter', sans-serif";
-      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-      ctx.fillStyle = color;
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
-      ctx.fillText(text, x + w / 2, y + h / 2);
-      ctx.textAlign = 'start';
-      ctx.textBaseline = 'alphabetic';
     }
+  }
+
+  // Рамка (рисуется последней, поверх всего)
+  if (frameOn.checked) {
+    const w = parseInt(frameWidth.value);
+    const r = parseInt(frameRadius.value);
+    const c = frameColor.value;
+    ctx.save();
+    if (r > 0) {
+      roundRect(ctx, w / 2, w / 2, W - w, H - w, r);
+      ctx.lineWidth = w;
+      ctx.strokeStyle = c;
+      ctx.stroke();
+    } else {
+      ctx.lineWidth = w;
+      ctx.strokeStyle = c;
+      ctx.strokeRect(w / 2, w / 2, W - w, H - w);
+    }
+    ctx.restore();
   }
 
   canvas.toBlob(b => {
@@ -1115,27 +1588,33 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ==== Сброс ====
+// ============ СБРОС ============
 reset.addEventListener('click', () => {
   panel.classList.remove('show');
   cutoutImg.removeAttribute('src');
   cutout.style.display = 'none';
-  editorStage.querySelectorAll('.text-block, .color-block').forEach(b => b.remove());
+  editorStage.querySelectorAll('.text-block, .color-block, .sticker').forEach(b => b.remove());
   editorStage.style.background = '';
   file.value = '';
   bgUpload.value = '';
+  stickerUpload.value = '';
   resultDataUrl = null;
   currentBg = { type: 'transparent' };
   editorWrap.style.width = '500px';
   editorWrap.style.height = '500px';
   updateSizeLabel();
   hideAllControls();
-  deselectText();
-  deselectBlock();
+  deselectText(); deselectBlock(); deselectSticker();
   cutout.classList.remove('active');
   document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
+  frameOn.checked = false;
+  applyFrame();
+  rebuildLayers();
   setStatus('');
 });
+
+rebuildLayers();
+applyFrame();
 </script>
 </body>
 </html>
