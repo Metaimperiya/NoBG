@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Удаление фона + замена</title>
+<title>Редактор: фон + надписи</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -39,24 +39,119 @@
   .status.err { color: #dc2626; }
   .status.ok  { color: #16a34a; }
 
-  .panel { display: none; margin-top: 24px; width: 100%; max-width: 900px; flex-direction: column; align-items: center; gap: 16px; }
+  .panel { display: none; margin-top: 24px; width: 100%; max-width: 1100px; flex-direction: column; align-items: center; gap: 16px; }
   .panel.show { display: flex; }
 
-  .row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-  .card { background: #fff; border-radius: 12px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; text-align: center; font-weight: 500; }
-  .card img {
-    max-width: 340px; max-height: 340px; display: block; border-radius: 6px;
-    background:
-      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
-      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
-      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
-    background-size: 16px 16px;
-    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  /* РЕДАКТОР с изменяемым размером */
+  .editor-wrap {
+    position: relative;
+    width: 500px;
+    height: 500px;
+    min-width: 200px;
+    min-height: 200px;
+    max-width: 95vw;
+    max-height: 90vh;
+    resize: both;
+    overflow: hidden;
+    border: 2px solid #d0d0d8;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .editor-wrap::after {
+    content: '';
+    position: absolute;
+    right: 0; bottom: 0;
+    width: 18px; height: 18px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, #3b82f6 50%);
+    border-bottom-right-radius: 10px;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .editor-stage {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .editor-stage img.base {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
   }
 
-  /* Галерея фонов */
+  /* Текстовые блоки */
+  .text-block {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    padding: 4px 8px;
+    border: 1px dashed transparent;
+    white-space: nowrap;
+    max-width: 90%;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .text-block:hover { border-color: rgba(59,130,246,0.5); }
+  .text-block.active { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
+  .text-block .del {
+    position: absolute;
+    top: -10px; right: -10px;
+    width: 20px; height: 20px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    display: none;
+    border: none;
+  }
+  .text-block.active .del { display: block; }
+
+  /* Панель управления текстом */
+  .text-controls {
+    display: none;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 700px;
+  }
+  .text-controls.show { display: flex; }
+  .text-controls input[type=text] {
+    padding: 8px 12px;
+    border: 1px solid #d0d0d8;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 180px;
+  }
+  .text-controls input[type=number] {
+    padding: 8px;
+    border: 1px solid #d0d0d8;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 70px;
+  }
+  .text-controls input[type=color] {
+    width: 40px; height: 36px;
+    border: 1px solid #d0d0d8;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 2px;
+  }
+
   .bg-section { width: 100%; max-width: 700px; margin-top: 8px; }
   .bg-section h3 { font-size: 13px; color: #666; margin-bottom: 10px; text-align: center; font-weight: 500; }
   .bg-grid {
@@ -101,8 +196,8 @@
 </head>
 <body>
 
-<h1>🪄 Удаление и замена фона</h1>
-<div class="sub">Загрузи картинку, убери фон и выбери новый</div>
+<h1>🪄 Редактор: фон + надписи</h1>
+<div class="sub">Загрузи картинку, убери фон, добавь надписи и растяни превью</div>
 
 <div class="drop" id="drop">
   📁 Нажми или перетащи сюда картинку
@@ -115,24 +210,38 @@
 <div class="status" id="status"></div>
 
 <div class="panel" id="panel">
-  <div class="row">
-    <div class="card">
-      <h3>Результат</h3>
-      <img id="res" alt="">
+
+  <!-- РЕДАКТОР -->
+  <div class="editor-wrap" id="editorWrap">
+    <div class="editor-stage" id="editorStage">
+      <img class="base" id="baseImg" alt="">
     </div>
   </div>
 
+  <!-- Панель управления текстом (появляется при клике на блок) -->
+  <div class="text-controls" id="textControls">
+    <span style="font-size:13px;color:#888">Текст:</span>
+    <input type="text" id="txtContent" placeholder="Введите текст...">
+    <input type="number" id="txtSize" value="24" min="8" max="200">
+    <input type="color" id="txtColor" value="#ffffff">
+    <select id="txtWeight">
+      <option value="400">Обычный</option>
+      <option value="600" selected>Полужирный</option>
+      <option value="800">Жирный</option>
+    </select>
+    <button id="txtDelete">🗑 Удалить блок</button>
+  </div>
+
+  <!-- Фоны -->
   <div class="bg-section">
     <h3>Выбери фон</h3>
     <div class="bg-grid" id="bgGrid">
-      <!-- Прозрачный -->
       <div class="bg-item" data-type="transparent" style="background-image:
         linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
         linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
         linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
         linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
         background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-color: #fff;"></div>
-      <!-- Цвета -->
       <div class="bg-item color-only" data-type="color" data-color="#ffffff" style="background:#fff"></div>
       <div class="bg-item color-only" data-type="color" data-color="#000000" style="background:#000"></div>
       <div class="bg-item color-only" data-type="color" data-color="#3b82f6" style="background:#3b82f6"></div>
@@ -141,7 +250,6 @@
       <div class="bg-item color-only" data-type="color" data-color="#f59e0b" style="background:#f59e0b"></div>
       <div class="bg-item color-only" data-type="color" data-color="#a855f7" style="background:#a855f7"></div>
       <div class="bg-item color-only" data-type="color" data-color="#ec4899" style="background:#ec4899"></div>
-      <!-- Градиенты -->
       <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #667eea, #764ba2)"></div>
       <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #f093fb, #f5576c)"></div>
       <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #4facfe, #00f2fe)"></div>
@@ -150,26 +258,22 @@
       <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #30cfd0, #330867)"></div>
       <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #ff9a9e, #fecfef)"></div>
       <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #a8edea, #fed6e3)"></div>
-      <!-- Северное сияние (картинки) -->
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=800&q=80"></div>
-      <!-- Природа -->
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"></div>
-      <!-- Город -->
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=800&q=80"></div>
-      <!-- Офис -->
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80"></div>
-      <!-- Студия -->
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1554147090-e1221a04a025?w=800&q=80"></div>
-      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1554147090-e1221a04a025?w=1200&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&q=80"></div>
     </div>
   </div>
 
   <div class="actions">
     <label class="upload-btn" for="bgUpload">📷 Свой фон</label>
+    <button id="addText">➕ Добавить текст</button>
     <button class="primary" id="dl">💾 Скачать PNG</button>
     <button id="reset">Сбросить</button>
   </div>
@@ -180,19 +284,26 @@ import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.7.0
 
 const $ = id => document.getElementById(id);
 const drop = $('drop'), file = $('file'), status = $('status');
-const panel = $('panel'), res = $('res');
-const dl = $('dl'), reset = $('reset'), bgGrid = $('bgGrid'), bgUpload = $('bgUpload');
+const panel = $('panel'), editorWrap = $('editorWrap'), editorStage = $('editorStage');
+const baseImg = $('baseImg'), dl = $('dl'), reset = $('reset');
+const bgGrid = $('bgGrid'), bgUpload = $('bgUpload');
+const textControls = $('textControls');
+const txtContent = $('txtContent'), txtSize = $('txtSize'), txtColor = $('txtColor'), txtWeight = $('txtWeight');
+const addTextBtn = $('addText'), txtDelete = $('txtDelete');
 
 const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
 
-let resultBlob = null;
+let resultDataUrl = null;   // вырезанная картинка (PNG с прозрачностью)
 let currentBg = { type: 'transparent' };
+let activeText = null;
+let zCounter = 10;
 
 function setStatus(text, cls = '') {
   status.className = 'status ' + cls;
   status.innerHTML = text;
 }
 
+// ==== Загрузка картинки ====
 drop.addEventListener('click', () => file.click());
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -211,8 +322,8 @@ async function process(f) {
     return;
   }
   panel.classList.add('show');
-  res.removeAttribute('src');
-  resultBlob = null;
+  baseImg.removeAttribute('src');
+  resultDataUrl = null;
   dl.disabled = true;
   setStatus('<span class="spinner"></span> Обрабатываю… (первый раз 10–30 сек)');
 
@@ -226,83 +337,27 @@ async function process(f) {
         setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
       }
     });
-    if (!blob || blob.size < 100) throw new Error('Пустой результат — на картинке нет объекта для вырезания');
-    resultBlob = blob;
-    await drawResult();
+    if (!blob || blob.size < 100) throw new Error('Пустой результат — на картинке нет объекта');
+    resultDataUrl = await blobToDataURL(blob);
+    baseImg.src = resultDataUrl;
     dl.disabled = false;
-    setStatus('✅ Готово! Выбери фон ниже', 'ok');
+    setStatus('✅ Готово! Растяни превью за уголок, выбери фон, добавь надписи', 'ok');
   } catch (err) {
     console.error(err);
     setStatus('❌ ' + (err.message || err), 'err');
   }
 }
 
-// Отрисовка с учётом выбранного фона
-async function drawResult() {
-  if (!resultBlob) return;
-
-  const img = new Image();
-  img.src = URL.createObjectURL(resultBlob);
-  await img.decode();
-
-  const c = document.createElement('canvas');
-  c.width = img.width;
-  c.height = img.height;
-  const ctx = c.getContext('2d');
-
-  if (currentBg.type === 'transparent') {
-    ctx.drawImage(img, 0, 0);
-  } else if (currentBg.type === 'color') {
-    ctx.fillStyle = currentBg.color;
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(img, 0, 0);
-  } else if (currentBg.type === 'gradient') {
-    // Для градиента используем CSS-строку через временный элемент
-    const tmp = document.createElement('div');
-    tmp.style.background = currentBg.grad;
-    document.body.appendChild(tmp);
-    const bgStyle = getComputedStyle(tmp).backgroundImage;
-    document.body.removeChild(tmp);
-
-    const gradCanvas = document.createElement('canvas');
-    gradCanvas.width = c.width;
-    gradCanvas.height = c.height;
-    const gctx = gradCanvas.getContext('2d');
-
-    // Парсим простой линейный градиент
-    const grad = ctx.createLinearGradient(0, 0, c.width, c.height);
-    const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
-    colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
-    gctx.fillStyle = grad;
-    gctx.fillRect(0, 0, c.width, c.height);
-
-    ctx.drawImage(gradCanvas, 0, 0);
-    ctx.drawImage(img, 0, 0);
-  } else if (currentBg.type === 'image') {
-    const bgImg = new Image();
-    bgImg.crossOrigin = 'anonymous';
-    bgImg.src = currentBg.src;
-    try {
-      await bgImg.decode();
-      // Масштабируем фон под размер холста (cover)
-      const scale = Math.max(c.width / bgImg.width, c.height / bgImg.height);
-      const w = bgImg.width * scale;
-      const h = bgImg.height * scale;
-      const x = (c.width - w) / 2;
-      const y = (c.height - h) / 2;
-      ctx.drawImage(bgImg, x, y, w, h);
-    } catch (e) {
-      console.warn('Не удалось загрузить фон', e);
-      ctx.fillStyle = '#eee';
-      ctx.fillRect(0, 0, c.width, c.height);
-    }
-    ctx.drawImage(img, 0, 0);
-  }
-
-  res.src = c.toDataURL('image/png');
+function blobToDataURL(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
 }
 
-// Клик по превью фона
+// ==== Выбор фона ====
 bgGrid.addEventListener('click', e => {
   const item = e.target.closest('.bg-item');
   if (!item) return;
@@ -312,48 +367,247 @@ bgGrid.addEventListener('click', e => {
 
   if (item.dataset.type === 'transparent') {
     currentBg = { type: 'transparent' };
+    editorStage.style.background = '';
+    editorStage.style.backgroundColor = '';
+    editorStage.style.backgroundImage = `
+      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)`;
+    editorStage.style.backgroundSize = '20px 20px';
+    editorStage.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0';
   } else if (item.dataset.type === 'color') {
     currentBg = { type: 'color', color: item.dataset.color };
+    editorStage.style.backgroundImage = 'none';
+    editorStage.style.background = item.dataset.color;
   } else if (item.dataset.type === 'gradient') {
     currentBg = { type: 'gradient', grad: item.dataset.grad };
+    editorStage.style.backgroundImage = 'none';
+    editorStage.style.background = item.dataset.grad;
   } else if (item.dataset.type === 'image') {
     currentBg = { type: 'image', src: item.dataset.src };
+    editorStage.style.background = `url(${item.dataset.src}) center/cover no-repeat`;
   }
-
-  if (resultBlob) drawResult();
 });
 
-// Загрузка своего фона
+// ==== Свой фон ====
 bgUpload.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
   const url = URL.createObjectURL(f);
   currentBg = { type: 'image', src: url };
-
+  editorStage.style.background = `url(${url}) center/cover no-repeat`;
   document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
-
-  // Добавляем превьюшку в галерею
   const item = document.createElement('div');
   item.className = 'bg-item active';
   item.style.backgroundImage = `url(${url})`;
   item.dataset.type = 'image';
   item.dataset.src = url;
   bgGrid.prepend(item);
-
-  if (resultBlob) drawResult();
 });
 
-// Скачивание
+// ==== Текстовые блоки ====
+addTextBtn.addEventListener('click', () => {
+  const el = document.createElement('div');
+  el.className = 'text-block';
+  el.contentEditable = 'true';
+  el.textContent = 'Ваш текст';
+  el.style.left = '40px';
+  el.style.top = '40px';
+  el.style.fontSize = '32px';
+  el.style.color = '#ffffff';
+  el.style.fontWeight = '600';
+  el.style.zIndex = ++zCounter;
+  el.style.textShadow = '0 2px 8px rgba(0,0,0,0.4)';
+
+  const del = document.createElement('button');
+  del.className = 'del';
+  del.textContent = '×';
+  del.addEventListener('click', e => {
+    e.stopPropagation();
+    el.remove();
+    hideTextControls();
+  });
+  el.appendChild(del);
+
+  editorStage.appendChild(el);
+  makeDraggable(el);
+  selectText(el);
+});
+
+function makeDraggable(el) {
+  let startX, startY, startL, startT, dragging = false;
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('del')) return;
+    if (el.contentEditable === 'true' && document.activeElement === el) return;
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startL = el.offsetLeft;
+    startT = el.offsetTop;
+    el.style.zIndex = ++zCounter;
+    selectText(el);
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    el.style.left = (startL + dx) + 'px';
+    el.style.top = (startT + dy) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => { dragging = false; });
+
+  // Тач
+  el.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    dragging = true;
+    startX = t.clientX;
+    startY = t.clientY;
+    startL = el.offsetLeft;
+    startT = el.offsetTop;
+    el.style.zIndex = ++zCounter;
+    selectText(el);
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    el.style.left = (startL + t.clientX - startX) + 'px';
+    el.style.top = (startT + t.clientY - startY) + 'px';
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => { dragging = false; });
+}
+
+function selectText(el) {
+  document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeText = el;
+  textControls.classList.add('show');
+  txtContent.value = el.textContent;
+  txtSize.value = parseInt(el.style.fontSize) || 24;
+  txtColor.value = rgbToHex(el.style.color) || '#ffffff';
+  txtWeight.value = el.style.fontWeight || '600';
+}
+
+function hideTextControls() {
+  textControls.classList.remove('show');
+  activeText = null;
+  document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
+}
+
+// Клик по пустому месту — снять выделение
+editorStage.addEventListener('click', e => {
+  if (e.target === editorStage || e.target === baseImg) hideTextControls();
+});
+
+// Изменение свойств текста
+txtContent.addEventListener('input', () => {
+  if (activeText) activeText.childNodes[0].nodeValue = txtContent.value;
+});
+txtSize.addEventListener('input', () => {
+  if (activeText) activeText.style.fontSize = txtSize.value + 'px';
+});
+txtColor.addEventListener('input', () => {
+  if (activeText) activeText.style.color = txtColor.value;
+});
+txtWeight.addEventListener('change', () => {
+  if (activeText) activeText.style.fontWeight = txtWeight.value;
+});
+txtDelete.addEventListener('click', () => {
+  if (activeText) { activeText.remove(); hideTextControls(); }
+});
+
+function rgbToHex(rgb) {
+  if (!rgb) return null;
+  if (rgb.startsWith('#')) return rgb;
+  const m = rgb.match(/\d+/g);
+  if (!m) return null;
+  return '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('');
+}
+
+// ==== Скачивание с рендером ====
 dl.addEventListener('click', async () => {
-  if (!res.src) return;
-  const img = new Image();
-  img.src = res.src;
-  await img.decode();
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth;
-  c.height = img.naturalHeight;
-  c.getContext('2d').drawImage(img, 0, 0);
-  c.toBlob(b => {
+  if (!resultDataUrl) return;
+
+  // Размер берём из editorWrap
+  const W = editorWrap.clientWidth;
+  const H = editorWrap.clientHeight;
+
+  // Умножаем на 2 для качества
+  const scale = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  // 1) Фон
+  if (currentBg.type === 'transparent') {
+    // оставляем прозрачным
+  } else if (currentBg.type === 'color') {
+    ctx.fillStyle = currentBg.color;
+    ctx.fillRect(0, 0, W, H);
+  } else if (currentBg.type === 'gradient') {
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
+    colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  } else if (currentBg.type === 'image') {
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+    bgImg.src = currentBg.src;
+    try {
+      await bgImg.decode();
+      const bgScale = Math.max(W / bgImg.width, H / bgImg.height);
+      const bw = bgImg.width * bgScale;
+      const bh = bgImg.height * bgScale;
+      ctx.drawImage(bgImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+    } catch (e) {
+      ctx.fillStyle = '#eee';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  // 2) Вырезанная картинка (object-fit: contain)
+  const base = new Image();
+  base.src = resultDataUrl;
+  await base.decode();
+  const baseScale = Math.min(W / base.width, H / base.height);
+  const bw = base.width * baseScale;
+  const bh = base.height * baseScale;
+  ctx.drawImage(base, (W - bw) / 2, (H - bh) / 2, bw, bh);
+
+  // 3) Текстовые блоки
+  const blocks = editorStage.querySelectorAll('.text-block');
+  for (const el of blocks) {
+    const text = el.childNodes[0] ? el.childNodes[0].nodeValue : el.textContent;
+    const style = getComputedStyle(el);
+    const x = parseFloat(el.style.left) || 0;
+    const y = parseFloat(el.style.top) || 0;
+    const fontSize = parseFloat(el.style.fontSize) || 24;
+    const fontWeight = el.style.fontWeight || '600';
+    const color = el.style.color || '#fff';
+
+    ctx.font = `${fontWeight} ${fontSize}px -apple-system, system-ui, sans-serif`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = 'top';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 2;
+    ctx.fillText(text, x + 8, y + 4);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+  }
+
+  // Скачивание
+  canvas.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
     a.download = 'result.png';
@@ -362,14 +616,19 @@ dl.addEventListener('click', async () => {
   }, 'image/png');
 });
 
-// Сброс
+// ==== Сброс ====
 reset.addEventListener('click', () => {
   panel.classList.remove('show');
-  res.removeAttribute('src');
+  baseImg.removeAttribute('src');
+  editorStage.querySelectorAll('.text-block').forEach(b => b.remove());
+  editorStage.style.background = '';
   file.value = '';
   bgUpload.value = '';
-  resultBlob = null;
+  resultDataUrl = null;
   currentBg = { type: 'transparent' };
+  editorWrap.style.width = '500px';
+  editorWrap.style.height = '500px';
+  hideTextControls();
   document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
   setStatus('');
 });
