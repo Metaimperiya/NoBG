@@ -1,0 +1,129 @@
+<!-- Библиотека для удаления фона (версия 1.7.0, свежая) -->
+<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js"></script>
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const loader = document.getElementById('loader');
+const preview = document.getElementById('preview');
+const controls = document.getElementById('controls');
+const originalImg = document.getElementById('originalImg');
+const resultImg = document.getElementById('resultImg');
+const bgColor = document.getElementById('bgColor');
+const downloadBtn = document.getElementById('downloadBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let originalFile = null;
+let resultBlob = null;
+let originalSrc = null;
+
+// ⚠️ ВОТ ЗДЕСЬ МЫ УКАЗЫВАЕМ, ГДЕ КАЧАТЬ МОДЕЛЬ
+// Новый официальный CDN, который сейчас работает
+const MODEL_CDN = "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/";
+
+// Клик по зоне
+dropZone.addEventListener('click', () => fileInput.click());
+
+// Drag & drop
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+async function handleFile(file) {
+  if (!file.type.startsWith('image/')) {
+    alert('Это не картинка!');
+    return;
+  }
+  originalFile = file;
+
+  if (originalSrc) URL.revokeObjectURL(originalSrc);
+  originalSrc = URL.createObjectURL(file);
+  originalImg.src = originalSrc;
+
+  loader.style.display = 'block';
+  preview.style.display = 'flex';
+  controls.style.display = 'none';
+  resultImg.src = '';
+
+  try {
+    // ⚠️ Передаём конфиг с правильным publicPath
+    const blob = await imgly.removeBackground(file, {
+      publicPath: MODEL_CDN,  // <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ
+      progress: (key, current, total) => {
+        loader.textContent = `⏳ ${key}: ${Math.round(current/total*100)}%`;
+      }
+    });
+    resultBlob = blob;
+    await renderResult();
+
+    loader.style.display = 'none';
+    controls.style.display = 'flex';
+  } catch (err) {
+    console.error(err);
+    loader.textContent = '❌ Ошибка: ' + err.message;
+  }
+}
+
+async function renderResult() {
+  const url = URL.createObjectURL(resultBlob);
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+
+  const color = bgColor.value;
+  if (color === 'transparent') {
+    resultImg.src = url;
+  } else {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    resultImg.src = canvas.toDataURL('image/png');
+  }
+}
+
+bgColor.addEventListener('change', () => {
+  if (resultBlob) renderResult();
+});
+
+downloadBtn.addEventListener('click', async () => {
+  const img = new Image();
+  img.src = resultImg.src;
+  await img.decode();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  canvas.getContext('2d').drawImage(img, 0, 0);
+
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'no-bg.png';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, 'image/png');
+});
+
+resetBtn.addEventListener('click', () => {
+  preview.style.display = 'none';
+  controls.style.display = 'none';
+  loader.style.display = 'none';
+  fileInput.value = '';
+  originalFile = null;
+  resultBlob = null;
+});
+</script>
