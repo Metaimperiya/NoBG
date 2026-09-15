@@ -174,8 +174,7 @@
   </div>
 </div>
 
-<!-- Библиотека с jsDelivr -->
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js"></script>
+<script src="https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js"></script>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -183,7 +182,6 @@ const drop = $('drop'), file = $('file'), status = $('status');
 const panel = $('panel'), orig = $('orig'), res = $('res');
 const bg = $('bg'), dl = $('dl'), reset = $('reset');
 
-// ⚠️ ЯВНО УКАЗЫВАЕМ CDN С МОДЕЛЬЮ (это исправляет ошибку)
 const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
 
 let resultBlob = null;
@@ -194,7 +192,6 @@ function setStatus(text, cls = '') {
   status.innerHTML = text;
 }
 
-// ==== Клики / drag & drop ====
 drop.addEventListener('click', () => file.click());
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -207,14 +204,12 @@ file.addEventListener('change', e => {
   if (e.target.files[0]) process(e.target.files[0]);
 });
 
-// ==== Основная обработка ====
 async function process(f) {
   if (!f.type.startsWith('image/')) {
     setStatus('❌ Это не картинка', 'err');
     return;
   }
 
-  // Показываем оригинал
   orig.src = URL.createObjectURL(f);
   panel.classList.add('show');
   res.removeAttribute('src');
@@ -224,18 +219,16 @@ async function process(f) {
   setStatus('<span class="spinner"></span> Загружаю модель… это займёт 10–30 сек в первый раз');
 
   try {
-    // ГЛАВНОЕ: передаём publicPath
     const blob = await imgly.removeBackground(f, {
       publicPath: MODEL_CDN,
-      model: 'isnet_fp16', // Используем FP16 модель (быстрее, ~80MB)
-      device: 'cpu',        // CPU надёжнее на Vercel (не требует специальных заголовков)
+      model: 'isnet_fp16',
+      device: 'cpu',
       progress: (key, cur, total) => {
         const pct = Math.round(cur / total * 100);
         setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
       }
     });
 
-    // Проверка, что не пусто
     if (!blob || blob.size < 100) {
       throw new Error('Модель вернула пустой результат');
     }
@@ -252,7 +245,6 @@ async function process(f) {
   }
 }
 
-// ==== Отрисовка результата (с учётом цвета фона) ====
 async function drawResult() {
   if (!resultBlob) return;
   if (resultUrl) URL.revokeObjectURL(resultUrl);
@@ -265,7 +257,6 @@ async function drawResult() {
     return;
   }
 
-  // Накладываем цвет
   const tmpUrl = URL.createObjectURL(resultBlob);
   const img = new Image();
   img.src = tmpUrl;
@@ -285,7 +276,6 @@ async function drawResult() {
 
 bg.addEventListener('change', drawResult);
 
-// ==== Скачивание ====
 dl.addEventListener('click', async () => {
   if (!res.src) return;
   const img = new Image();
@@ -306,7 +296,6 @@ dl.addEventListener('click', async () => {
   }, 'image/png');
 });
 
-// ==== Сброс ====
 reset.addEventListener('click', () => {
   panel.classList.remove('show');
   res.removeAttribute('src');
