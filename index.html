@@ -165,7 +165,6 @@
   }
   .text-block.active .del { display: block; }
 
-  /* ===== ЦВЕТНАЯ ПЛАШКА БЕЗ ТЕКСТА ===== */
   .color-block {
     position: absolute;
     cursor: move;
@@ -501,7 +500,6 @@
     <button id="txtDelete">🗑 Удалить</button>
   </div>
 
-  <!-- ЦВЕТНАЯ ПЛАШКА БЕЗ ТЕКСТА -->
   <div class="controls" id="blockControls">
     <span class="ctrl-label">Плашка:</span>
     <div class="ctrl-group">
@@ -1294,7 +1292,7 @@ txtOutlineWidth.addEventListener('input', () => {
 txtShadowOn.addEventListener('change', () => { if (!activeText) return; activeText.dataset.shadow = txtShadowOn.checked ? 'on' : 'off'; applyTextStyle(activeText); });
 txtDelete.addEventListener('click', () => { if (activeText) { activeText.remove(); hideAllControls(); activeText = null; rebuildLayers(); } });
 
-// ============ ПЛАШКА (БЕЗ ТЕКСТА) ============
+// ============ ПЛАШКА ============
 addBlockBtn.addEventListener('click', () => {
   const el = document.createElement('div');
   el.className = 'color-block';
@@ -1389,163 +1387,187 @@ function rgbToHex(rgb) {
 
 // ============ СКАЧИВАНИЕ ============
 dl.addEventListener('click', async () => {
-  if (!resultDataUrl) return;
-  const W = editorWrap.clientWidth;
-  const H = editorWrap.clientHeight;
-  const scale = 2;
-  const canvas = document.createElement('canvas');
-  canvas.width = W * scale;
-  canvas.height = H * scale;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(scale, scale);
-
-  if (currentBg.type === 'transparent') {
-    // пусто
-  } else if (currentBg.type === 'color') {
-    ctx.fillStyle = currentBg.color; ctx.fillRect(0, 0, W, H);
-  } else if (currentBg.type === 'gradient') {
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
-    colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-  } else if (currentBg.type === 'image') {
-    const bgImg = new Image();
-    bgImg.crossOrigin = 'anonymous';
-    bgImg.src = currentBg.src;
-    try {
-      await bgImg.decode();
-      const bgScale = Math.max(W / bgImg.width, H / bgImg.height);
-      const bw = bgImg.width * bgScale;
-      const bh = bgImg.height * bgScale;
-      ctx.drawImage(bgImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
-    } catch (e) {
-      ctx.fillStyle = '#eee'; ctx.fillRect(0, 0, W, H);
-    }
+  if (!resultDataUrl) {
+    setStatus('❌ Сначала загрузи картинку', 'err');
+    return;
   }
+  dl.disabled = true;
+  setStatus('<span class="spinner"></span> Готовлю картинку...');
 
-  const allElements = [...editorStage.children].filter(el =>
-    el.classList.contains('cutout') ||
-    el.classList.contains('sticker') ||
-    el.classList.contains('text-block') ||
-    el.classList.contains('color-block')
-  );
-  allElements.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
+  try {
+    const W = editorWrap.clientWidth;
+    const H = editorWrap.clientHeight;
+    const scale = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * scale;
+    canvas.height = H * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
 
-  if (document.fonts) await document.fonts.ready;
-
-  for (const el of allElements) {
-    if (el.style.display === 'none') continue;
-
-    if (el === cutout) {
-      const base = new Image();
-      base.src = resultDataUrl;
-      await base.decode();
-      ctx.drawImage(base, cutoutState.x, cutoutState.y, cutoutState.w, cutoutState.h);
-    } else if (el.classList.contains('sticker')) {
-      const x = parseFloat(el.style.left) || 0;
-      const y = parseFloat(el.style.top) || 0;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-      const rot = parseFloat(el.dataset.rotate || 0);
-      const flip = el.dataset.flip === 'on';
-      const op = parseFloat(el.style.opacity || 1);
-      const img = el.querySelector('img');
+    if (currentBg.type === 'transparent') {
+      // пусто
+    } else if (currentBg.type === 'color') {
+      ctx.fillStyle = currentBg.color; ctx.fillRect(0, 0, W, H);
+    } else if (currentBg.type === 'gradient') {
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
+      colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+    } else if (currentBg.type === 'image') {
+      const bgImg = new Image();
+      bgImg.crossOrigin = 'anonymous';
+      bgImg.src = currentBg.src;
       try {
-        await img.decode();
-        ctx.save();
-        ctx.globalAlpha = op;
-        const cx = x + w / 2;
-        const cy = y + h / 2;
-        ctx.translate(cx, cy);
-        ctx.rotate(rot * Math.PI / 180);
-        ctx.scale(flip ? -1 : 1, 1);
-        ctx.drawImage(img, -w / 2, -h / 2, w, h);
-        ctx.restore();
-      } catch (e) { console.warn(e); }
-    } else if (el.classList.contains('text-block')) {
-      let text = '';
-      for (const n of el.childNodes) if (n.nodeType === 3) text += n.nodeValue;
-      const x = parseFloat(el.style.left) || 0;
-      const y = parseFloat(el.style.top) || 0;
-      const fontSize = parseFloat(el.style.fontSize) || 32;
-      const fontWeight = el.style.fontWeight || '700';
-      const color = el.style.color || '#fff';
-      const fontFamily = el.style.fontFamily || "'Inter', sans-serif";
-      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-      ctx.textBaseline = 'top';
-
-      const outline = el.dataset.outline === 'on';
-      const outlineColor = el.dataset.outlineColor || '#000000';
-      const outlineWidth = parseInt(el.dataset.outlineWidth || 3);
-      const shadow = el.dataset.shadow !== 'off';
-
-      if (shadow) {
-        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-        ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+        await bgImg.decode();
+        const bgScale = Math.max(W / bgImg.width, H / bgImg.height);
+        const bw = bgImg.width * bgScale;
+        const bh = bgImg.height * bgScale;
+        ctx.drawImage(bgImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+      } catch (e) {
+        ctx.fillStyle = '#eee'; ctx.fillRect(0, 0, W, H);
       }
-      if (outline) {
-        ctx.fillStyle = outlineColor;
-        for (let r = 1; r <= outlineWidth; r++) {
-          for (let ang = 0; ang < 360; ang += 30) {
-            const rad = ang * Math.PI / 180;
-            ctx.fillText(text, x + 8 + Math.cos(rad) * r, y + 4 + Math.sin(rad) * r);
+    }
+
+    const allElements = [...editorStage.children].filter(el =>
+      el.classList.contains('cutout') ||
+      el.classList.contains('sticker') ||
+      el.classList.contains('text-block') ||
+      el.classList.contains('color-block')
+    );
+    allElements.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
+
+    if (document.fonts) await document.fonts.ready;
+
+    for (const el of allElements) {
+      if (el.style.display === 'none') continue;
+
+      if (el === cutout) {
+        const base = new Image();
+        base.src = resultDataUrl;
+        await base.decode();
+        ctx.drawImage(base, cutoutState.x, cutoutState.y, cutoutState.w, cutoutState.h);
+      } else if (el.classList.contains('sticker')) {
+        const x = parseFloat(el.style.left) || 0;
+        const y = parseFloat(el.style.top) || 0;
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        const rot = parseFloat(el.dataset.rotate || 0);
+        const flip = el.dataset.flip === 'on';
+        const op = parseFloat(el.style.opacity || 1);
+        const img = el.querySelector('img');
+        try {
+          await img.decode();
+          ctx.save();
+          ctx.globalAlpha = op;
+          const cx = x + w / 2;
+          const cy = y + h / 2;
+          ctx.translate(cx, cy);
+          ctx.rotate(rot * Math.PI / 180);
+          ctx.scale(flip ? -1 : 1, 1);
+          ctx.drawImage(img, -w / 2, -h / 2, w, h);
+          ctx.restore();
+        } catch (e) { console.warn(e); }
+      } else if (el.classList.contains('text-block')) {
+        let text = '';
+        for (const n of el.childNodes) if (n.nodeType === 3) text += n.nodeValue;
+        const x = parseFloat(el.style.left) || 0;
+        const y = parseFloat(el.style.top) || 0;
+        const fontSize = parseFloat(el.style.fontSize) || 32;
+        const fontWeight = el.style.fontWeight || '700';
+        const color = el.style.color || '#fff';
+        const fontFamily = el.style.fontFamily || "'Inter', sans-serif";
+        ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+        ctx.textBaseline = 'top';
+
+        const outline = el.dataset.outline === 'on';
+        const outlineColor = el.dataset.outlineColor || '#000000';
+        const outlineWidth = parseInt(el.dataset.outlineWidth || 3);
+        const shadow = el.dataset.shadow !== 'off';
+
+        if (shadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.4)';
+          ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+        }
+        if (outline) {
+          ctx.fillStyle = outlineColor;
+          for (let r = 1; r <= outlineWidth; r++) {
+            for (let ang = 0; ang < 360; ang += 30) {
+              const rad = ang * Math.PI / 180;
+              ctx.fillText(text, x + 8 + Math.cos(rad) * r, y + 4 + Math.sin(rad) * r);
+            }
           }
         }
-      }
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-      ctx.fillStyle = color;
-      ctx.fillText(text, x + 8, y + 4);
-    } else if (el.classList.contains('color-block')) {
-      const x = parseFloat(el.style.left) || 0;
-      const y = parseFloat(el.style.top) || 0;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-      const radius = parseFloat(el.style.borderRadius) || 0;
-      const bg = el.style.background || el.style.backgroundColor || '#3b82f6';
-      const opacity = parseFloat(el.style.opacity || 1);
-      const rot = parseFloat(el.dataset.rotate || 0);
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        ctx.fillStyle = color;
+        ctx.fillText(text, x + 8, y + 4);
+      } else if (el.classList.contains('color-block')) {
+        const x = parseFloat(el.style.left) || 0;
+        const y = parseFloat(el.style.top) || 0;
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        const radius = parseFloat(el.style.borderRadius) || 0;
+        const bg = el.style.background || el.style.backgroundColor || '#3b82f6';
+        const opacity = parseFloat(el.style.opacity || 1);
+        const rot = parseFloat(el.dataset.rotate || 0);
 
-      ctx.save();
-      ctx.globalAlpha = opacity;
-      if (rot) {
-        const cx = x + w / 2; const cy = y + h / 2;
-        ctx.translate(cx, cy);
-        ctx.rotate(rot * Math.PI / 180);
-        ctx.translate(-cx, -cy);
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        if (rot) {
+          const cx = x + w / 2; const cy = y + h / 2;
+          ctx.translate(cx, cy);
+          ctx.rotate(rot * Math.PI / 180);
+          ctx.translate(-cx, -cy);
+        }
+        roundRect(ctx, x, y, w, h, radius);
+        ctx.fillStyle = bg;
+        ctx.fill();
+        ctx.restore();
       }
-      roundRect(ctx, x, y, w, h, radius);
-      ctx.fillStyle = bg;
-      ctx.fill();
+    }
+
+    if (frameOn.checked) {
+      const w = parseInt(frameWidth.value);
+      const r = parseInt(frameRadius.value);
+      const c = frameColor.value;
+      ctx.save();
+      if (r > 0) {
+        roundRect(ctx, w / 2, w / 2, W - w, H - w, r);
+        ctx.lineWidth = w;
+        ctx.strokeStyle = c;
+        ctx.stroke();
+      } else {
+        ctx.lineWidth = w;
+        ctx.strokeStyle = c;
+        ctx.strokeRect(w / 2, w / 2, W - w, H - w);
+      }
       ctx.restore();
     }
-  }
 
-  if (frameOn.checked) {
-    const w = parseInt(frameWidth.value);
-    const r = parseInt(frameRadius.value);
-    const c = frameColor.value;
-    ctx.save();
-    if (r > 0) {
-      roundRect(ctx, w / 2, w / 2, W - w, H - w, r);
-      ctx.lineWidth = w;
-      ctx.strokeStyle = c;
-      ctx.stroke();
-    } else {
-      ctx.lineWidth = w;
-      ctx.strokeStyle = c;
-      ctx.strokeRect(w / 2, w / 2, W - w, H - w);
-    }
-    ctx.restore();
-  }
+    // Скачивание
+    canvas.toBlob(b => {
+      if (!b) {
+        setStatus('❌ Не удалось создать картинку', 'err');
+        dl.disabled = false;
+        return;
+      }
+      const url = URL.createObjectURL(b);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'result_' + Date.now() + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      dl.disabled = false;
+      setStatus('✅ Картинка скачана!', 'ok');
+    }, 'image/png');
 
-  canvas.toBlob(b => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(b);
-    a.download = 'result.png';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  }, 'image/png');
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ Ошибка: ' + (err.message || err), 'err');
+    dl.disabled = false;
+  }
 });
 
 function roundRect(ctx, x, y, w, h, r) {
