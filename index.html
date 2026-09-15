@@ -1,5 +1,130 @@
-<!-- Библиотека для удаления фона (версия 1.7.0, свежая) -->
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js"></script>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Удаление фона</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  h1 { margin-bottom: 20px; font-size: 24px; }
+  .drop-zone {
+    width: 100%; max-width: 600px;
+    border: 2px dashed #555;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #16213e;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #4ade80;
+    background: #1e2a4a;
+  }
+  .drop-zone p { color: #aaa; margin-top: 8px; font-size: 14px; }
+  input[type=file] { display: none; }
+  .controls {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button, select {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    background: #4ade80;
+    color: #111;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+  button:hover { background: #22c55e; }
+  button:disabled { background: #444; color: #888; cursor: not-allowed; }
+  select { background: #0f3460; color: #eee; }
+  .preview {
+    margin-top: 30px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .preview div {
+    background: #16213e;
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .preview h3 { font-size: 14px; margin-bottom: 8px; color: #aaa; }
+  .preview img {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 8px;
+    display: block;
+    background:
+      linear-gradient(45deg, #333 25%, transparent 25%),
+      linear-gradient(-45deg, #333 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #333 75%),
+      linear-gradient(-45deg, transparent 75%, #333 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  }
+  #loader {
+    display: none;
+    margin-top: 20px;
+    color: #4ade80;
+  }
+</style>
+</head>
+<body>
+
+<h1>🪄 Удаление фона из картинки</h1>
+
+<div class="drop-zone" id="dropZone">
+  <div>📁 Нажми или перетащи картинку сюда</div>
+  <p>Поддерживаются JPG, PNG, WEBP</p>
+  <input type="file" id="fileInput" accept="image/*">
+</div>
+
+<div id="loader">⏳ Обрабатываю... первый раз может занять 10-20 сек (скачивается модель)</div>
+
+<div class="controls" id="controls" style="display:none">
+  <select id="bgColor">
+    <option value="transparent">Прозрачный</option>
+    <option value="#ffffff">Белый</option>
+    <option value="#000000">Чёрный</option>
+    <option value="#ff6b6b">Красный</option>
+    <option value="#4ade80">Зелёный</option>
+    <option value="#3b82f6">Синий</option>
+  </select>
+  <button id="downloadBtn">💾 Скачать PNG</button>
+  <button id="resetBtn">🔄 Сбросить</button>
+</div>
+
+<div class="preview" id="preview" style="display:none">
+  <div>
+    <h3>Оригинал</h3>
+    <img id="originalImg">
+  </div>
+  <div>
+    <h3>Результат</h3>
+    <img id="resultImg">
+  </div>
+</div>
+
+<!-- Библиотека для удаления фона -->
+<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/dist/browser.js"></script>
 <script>
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -15,10 +140,6 @@ const resetBtn = document.getElementById('resetBtn');
 let originalFile = null;
 let resultBlob = null;
 let originalSrc = null;
-
-// ⚠️ ВОТ ЗДЕСЬ МЫ УКАЗЫВАЕМ, ГДЕ КАЧАТЬ МОДЕЛЬ
-// Новый официальный CDN, который сейчас работает
-const MODEL_CDN = "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/";
 
 // Клик по зоне
 dropZone.addEventListener('click', () => fileInput.click());
@@ -46,6 +167,7 @@ async function handleFile(file) {
   }
   originalFile = file;
 
+  // Показываем оригинал
   if (originalSrc) URL.revokeObjectURL(originalSrc);
   originalSrc = URL.createObjectURL(file);
   originalImg.src = originalSrc;
@@ -56,9 +178,8 @@ async function handleFile(file) {
   resultImg.src = '';
 
   try {
-    // ⚠️ Передаём конфиг с правильным publicPath
+    // Основная магия — удаление фона
     const blob = await imgly.removeBackground(file, {
-      publicPath: MODEL_CDN,  // <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ
       progress: (key, current, total) => {
         loader.textContent = `⏳ ${key}: ${Math.round(current/total*100)}%`;
       }
@@ -74,6 +195,7 @@ async function handleFile(file) {
   }
 }
 
+// Отрисовка результата с выбранным фоном
 async function renderResult() {
   const url = URL.createObjectURL(resultBlob);
   const img = new Image();
@@ -99,6 +221,7 @@ bgColor.addEventListener('change', () => {
   if (resultBlob) renderResult();
 });
 
+// Скачивание
 downloadBtn.addEventListener('click', async () => {
   const img = new Image();
   img.src = resultImg.src;
@@ -118,6 +241,7 @@ downloadBtn.addEventListener('click', async () => {
   }, 'image/png');
 });
 
+// Сброс
 resetBtn.addEventListener('click', () => {
   preview.style.display = 'none';
   controls.style.display = 'none';
@@ -127,3 +251,5 @@ resetBtn.addEventListener('click', () => {
   resultBlob = null;
 });
 </script>
+</body>
+</html>
