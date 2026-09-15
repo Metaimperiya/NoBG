@@ -18,6 +18,7 @@
   }
   h1 { font-size: 22px; margin-bottom: 6px; }
   .sub { color: #888; font-size: 13px; margin-bottom: 24px; }
+
   .drop {
     width: 100%; max-width: 520px;
     border: 2px dashed #c0c0c8;
@@ -30,19 +31,61 @@
     font-size: 15px;
     color: #444;
   }
-  .drop:hover, .drop.over { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+  .drop:hover, .drop.over {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
   .drop small { display: block; color: #999; font-size: 12px; margin-top: 6px; }
   input[type=file] { display: none; }
-  .status { margin-top: 16px; font-size: 14px; color: #666; min-height: 20px; text-align: center; }
+
+  .status {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #666;
+    min-height: 20px;
+    text-align: center;
+  }
   .status.err { color: #dc2626; }
   .status.ok  { color: #16a34a; }
-  .panel { display: none; margin-top: 24px; width: 100%; max-width: 900px; flex-direction: column; align-items: center; gap: 16px; }
+
+  .panel {
+    display: none;
+    margin-top: 24px;
+    width: 100%;
+    max-width: 900px;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
   .panel.show { display: flex; }
-  .row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-  .card { background: #fff; border-radius: 12px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; text-align: center; font-weight: 500; }
+
+  .row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card h3 {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: 500;
+  }
   .card img {
-    max-width: 340px; max-height: 340px; display: block; border-radius: 6px;
+    max-width: 340px;
+    max-height: 340px;
+    display: block;
+    border-radius: 6px;
     background:
       linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
       linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
@@ -51,18 +94,42 @@
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
   }
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
-  select, button {
-    font: inherit; font-size: 14px; padding: 9px 16px; border-radius: 9px;
-    border: 1px solid #d0d0d8; background: #fff; cursor: pointer; color: #222;
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
   }
-  button.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; font-weight: 600; }
+  select, button {
+    font: inherit;
+    font-size: 14px;
+    padding: 9px 16px;
+    border-radius: 9px;
+    border: 1px solid #d0d0d8;
+    background: #fff;
+    cursor: pointer;
+    color: #222;
+  }
+  button.primary {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+    font-weight: 600;
+  }
   button.primary:hover { background: #2563eb; }
   button:disabled { opacity: 0.5; cursor: wait; }
+
   .spinner {
-    display: inline-block; width: 14px; height: 14px;
-    border: 2px solid #ccc; border-top-color: #3b82f6; border-radius: 50%;
-    animation: spin 0.7s linear infinite; vertical-align: -2px; margin-right: 6px;
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #ccc;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: -2px;
+    margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -92,6 +159,7 @@
       <img id="res" alt="">
     </div>
   </div>
+
   <div class="actions">
     <select id="bg">
       <option value="transparent">Прозрачный фон</option>
@@ -106,9 +174,9 @@
   </div>
 </div>
 
-<script type="module">
-import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.7.0';
+<script src="https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js"></script>
 
+<script>
 const $ = id => document.getElementById(id);
 const drop = $('drop'), file = $('file'), status = $('status');
 const panel = $('panel'), orig = $('orig'), res = $('res');
@@ -141,15 +209,17 @@ async function process(f) {
     setStatus('❌ Это не картинка', 'err');
     return;
   }
+
   orig.src = URL.createObjectURL(f);
   panel.classList.add('show');
   res.removeAttribute('src');
   resultBlob = null;
+
   dl.disabled = true;
   setStatus('<span class="spinner"></span> Загружаю модель… это займёт 10–30 сек в первый раз');
 
   try {
-    const blob = await removeBackground(f, {
+    const blob = await imgly.removeBackground(f, {
       publicPath: MODEL_CDN,
       model: 'isnet_fp16',
       device: 'cpu',
@@ -158,11 +228,17 @@ async function process(f) {
         setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
       }
     });
-    if (!blob || blob.size < 100) throw new Error('Модель вернула пустой результат');
+
+    if (!blob || blob.size < 100) {
+      throw new Error('Модель вернула пустой результат');
+    }
+
     resultBlob = blob;
     await drawResult();
+
     dl.disabled = false;
     setStatus('✅ Готово!', 'ok');
+
   } catch (err) {
     console.error('Ошибка:', err);
     setStatus('❌ Ошибка: ' + (err.message || err), 'err');
@@ -172,16 +248,20 @@ async function process(f) {
 async function drawResult() {
   if (!resultBlob) return;
   if (resultUrl) URL.revokeObjectURL(resultUrl);
+
   const color = bg.value;
+
   if (color === 'transparent') {
     resultUrl = URL.createObjectURL(resultBlob);
     res.src = resultUrl;
     return;
   }
+
   const tmpUrl = URL.createObjectURL(resultBlob);
   const img = new Image();
   img.src = tmpUrl;
   await img.decode();
+
   const c = document.createElement('canvas');
   c.width = img.width;
   c.height = img.height;
@@ -189,6 +269,7 @@ async function drawResult() {
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.drawImage(img, 0, 0);
+
   URL.revokeObjectURL(tmpUrl);
   res.src = c.toDataURL('image/png');
 }
@@ -200,10 +281,12 @@ dl.addEventListener('click', async () => {
   const img = new Image();
   img.src = res.src;
   await img.decode();
+
   const c = document.createElement('canvas');
   c.width = img.naturalWidth;
   c.height = img.naturalHeight;
   c.getContext('2d').drawImage(img, 0, 0);
+
   c.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
