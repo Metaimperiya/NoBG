@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Редактор: фон + надписи</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;700;900&family=Bebas+Neue&family=Lobster&family=Pacifico&family=Caveat:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -41,6 +47,24 @@
 
   .panel { display: none; margin-top: 24px; width: 100%; max-width: 1100px; flex-direction: column; align-items: center; gap: 16px; }
   .panel.show { display: flex; }
+
+  /* Панель управления размером */
+  .size-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #fff;
+    padding: 8px 14px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    font-size: 13px;
+    color: #666;
+  }
+  .size-bar button {
+    padding: 5px 10px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
 
   /* РЕДАКТОР с изменяемым размером */
   .editor-wrap {
@@ -94,8 +118,8 @@
     border: 1px dashed transparent;
     white-space: nowrap;
     max-width: 90%;
-    font-weight: 600;
     line-height: 1.2;
+    font-family: 'Inter', sans-serif;
   }
   .text-block:hover { border-color: rgba(59,130,246,0.5); }
   .text-block.active { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
@@ -112,6 +136,7 @@
     cursor: pointer;
     display: none;
     border: none;
+    padding: 0;
   }
   .text-block.active .del { display: block; }
 
@@ -122,12 +147,12 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    padding: 12px;
+    padding: 14px;
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     width: 100%;
-    max-width: 700px;
+    max-width: 900px;
   }
   .text-controls.show { display: flex; }
   .text-controls input[type=text] {
@@ -135,7 +160,7 @@
     border: 1px solid #d0d0d8;
     border-radius: 8px;
     font-size: 14px;
-    width: 180px;
+    width: 200px;
   }
   .text-controls input[type=number] {
     padding: 8px;
@@ -151,6 +176,15 @@
     cursor: pointer;
     padding: 2px;
   }
+  .text-controls select {
+    padding: 8px 10px;
+    border: 1px solid #d0d0d8;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .ctrl-label { font-size: 12px; color: #888; }
 
   .bg-section { width: 100%; max-width: 700px; margin-top: 8px; }
   .bg-section h3 { font-size: 13px; color: #666; margin-bottom: 10px; text-align: center; font-weight: 500; }
@@ -211,6 +245,20 @@
 
 <div class="panel" id="panel">
 
+  <div class="size-bar">
+    <span>Размер:&nbsp;</span>
+    <button id="sizeDown">−</button>
+    <span id="sizeLabel">500 × 500</span>
+    <button id="sizeUp">+</button>
+    <span style="color:#aaa;margin:0 6px">|</span>
+    <span>Пресеты:&nbsp;</span>
+    <button data-size="400x400">1:1</button>
+    <button data-size="600x800">3:4</button>
+    <button data-size="800x600">4:3</button>
+    <button data-size="540x960">9:16</button>
+    <button data-size="1280x720">16:9</button>
+  </div>
+
   <!-- РЕДАКТОР -->
   <div class="editor-wrap" id="editorWrap">
     <div class="editor-stage" id="editorStage">
@@ -218,18 +266,41 @@
     </div>
   </div>
 
-  <!-- Панель управления текстом (появляется при клике на блок) -->
+  <!-- Панель управления текстом -->
   <div class="text-controls" id="textControls">
-    <span style="font-size:13px;color:#888">Текст:</span>
+    <span class="ctrl-label">Текст:</span>
     <input type="text" id="txtContent" placeholder="Введите текст...">
-    <input type="number" id="txtSize" value="24" min="8" max="200">
-    <input type="color" id="txtColor" value="#ffffff">
-    <select id="txtWeight">
-      <option value="400">Обычный</option>
-      <option value="600" selected>Полужирный</option>
-      <option value="800">Жирный</option>
+
+    <span class="ctrl-label">Шрифт:</span>
+    <select id="txtFont">
+      <option value="Inter">Inter</option>
+      <option value="Roboto">Roboto</option>
+      <option value="Montserrat">Montserrat</option>
+      <option value="Oswald">Oswald</option>
+      <option value="Playfair Display">Playfair Display</option>
+      <option value="Bebas Neue">Bebas Neue</option>
+      <option value="Lobster">Lobster</option>
+      <option value="Pacifico">Pacifico</option>
+      <option value="Caveat">Caveat</option>
+      <option value="Permanent Marker">Permanent Marker</option>
     </select>
-    <button id="txtDelete">🗑 Удалить блок</button>
+
+    <span class="ctrl-label">Размер:</span>
+    <input type="number" id="txtSize" value="32" min="8" max="200">
+
+    <span class="ctrl-label">Цвет:</span>
+    <input type="color" id="txtColor" value="#ffffff">
+
+    <span class="ctrl-label">Вес:</span>
+    <select id="txtWeight">
+      <option value="400">Тонкий</option>
+      <option value="600">Средний</option>
+      <option value="700" selected>Жирный</option>
+      <option value="800">Очень жирный</option>
+      <option value="900">Чёрный</option>
+    </select>
+
+    <button id="txtDelete">🗑 Удалить</button>
   </div>
 
   <!-- Фоны -->
@@ -288,12 +359,14 @@ const panel = $('panel'), editorWrap = $('editorWrap'), editorStage = $('editorS
 const baseImg = $('baseImg'), dl = $('dl'), reset = $('reset');
 const bgGrid = $('bgGrid'), bgUpload = $('bgUpload');
 const textControls = $('textControls');
-const txtContent = $('txtContent'), txtSize = $('txtSize'), txtColor = $('txtColor'), txtWeight = $('txtWeight');
+const txtContent = $('txtContent'), txtSize = $('txtSize'), txtColor = $('txtColor');
+const txtWeight = $('txtWeight'), txtFont = $('txtFont');
 const addTextBtn = $('addText'), txtDelete = $('txtDelete');
+const sizeUp = $('sizeUp'), sizeDown = $('sizeDown'), sizeLabel = $('sizeLabel');
 
 const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
 
-let resultDataUrl = null;   // вырезанная картинка (PNG с прозрачностью)
+let resultDataUrl = null;
 let currentBg = { type: 'transparent' };
 let activeText = null;
 let zCounter = 10;
@@ -325,7 +398,7 @@ async function process(f) {
   baseImg.removeAttribute('src');
   resultDataUrl = null;
   dl.disabled = true;
-  setStatus('<span class="spinner"></span> Обрабатываю… (первый раз 10–30 сек)');
+  setStatus('<span class="spinner"></span> Обрабатываю…');
 
   try {
     const blob = await removeBackground(f, {
@@ -337,11 +410,11 @@ async function process(f) {
         setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
       }
     });
-    if (!blob || blob.size < 100) throw new Error('Пустой результат — на картинке нет объекта');
+    if (!blob || blob.size < 100) throw new Error('Пустой результат');
     resultDataUrl = await blobToDataURL(blob);
     baseImg.src = resultDataUrl;
     dl.disabled = false;
-    setStatus('✅ Готово! Растяни превью за уголок, выбери фон, добавь надписи', 'ok');
+    setStatus('✅ Готово!', 'ok');
   } catch (err) {
     console.error(err);
     setStatus('❌ ' + (err.message || err), 'err');
@@ -357,18 +430,44 @@ function blobToDataURL(blob) {
   });
 }
 
+// ==== Размер редактора (кнопки) ====
+function updateSizeLabel() {
+  sizeLabel.textContent = editorWrap.clientWidth + ' × ' + editorWrap.clientHeight;
+}
+sizeUp.addEventListener('click', () => {
+  const w = editorWrap.clientWidth + 50;
+  const h = editorWrap.clientHeight + 50;
+  editorWrap.style.width = w + 'px';
+  editorWrap.style.height = h + 'px';
+  updateSizeLabel();
+});
+sizeDown.addEventListener('click', () => {
+  const w = Math.max(200, editorWrap.clientWidth - 50);
+  const h = Math.max(200, editorWrap.clientHeight - 50);
+  editorWrap.style.width = w + 'px';
+  editorWrap.style.height = h + 'px';
+  updateSizeLabel();
+});
+document.querySelectorAll('.size-bar button[data-size]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const [w, h] = btn.dataset.size.split('x').map(Number);
+    editorWrap.style.width = w + 'px';
+    editorWrap.style.height = h + 'px';
+    updateSizeLabel();
+  });
+});
+new ResizeObserver(updateSizeLabel).observe(editorWrap);
+
 // ==== Выбор фона ====
 bgGrid.addEventListener('click', e => {
   const item = e.target.closest('.bg-item');
   if (!item) return;
-
   document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
   item.classList.add('active');
 
   if (item.dataset.type === 'transparent') {
     currentBg = { type: 'transparent' };
     editorStage.style.background = '';
-    editorStage.style.backgroundColor = '';
     editorStage.style.backgroundImage = `
       linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
       linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
@@ -390,7 +489,6 @@ bgGrid.addEventListener('click', e => {
   }
 });
 
-// ==== Свой фон ====
 bgUpload.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
@@ -410,13 +508,13 @@ bgUpload.addEventListener('change', e => {
 addTextBtn.addEventListener('click', () => {
   const el = document.createElement('div');
   el.className = 'text-block';
-  el.contentEditable = 'true';
   el.textContent = 'Ваш текст';
   el.style.left = '40px';
   el.style.top = '40px';
   el.style.fontSize = '32px';
   el.style.color = '#ffffff';
-  el.style.fontWeight = '600';
+  el.style.fontWeight = '700';
+  el.style.fontFamily = "'Inter', sans-serif";
   el.style.zIndex = ++zCounter;
   el.style.textShadow = '0 2px 8px rgba(0,0,0,0.4)';
 
@@ -440,7 +538,6 @@ function makeDraggable(el) {
 
   el.addEventListener('mousedown', e => {
     if (e.target.classList.contains('del')) return;
-    if (el.contentEditable === 'true' && document.activeElement === el) return;
     dragging = true;
     startX = e.clientX;
     startY = e.clientY;
@@ -453,22 +550,16 @@ function makeDraggable(el) {
 
   document.addEventListener('mousemove', e => {
     if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    el.style.left = (startL + dx) + 'px';
-    el.style.top = (startT + dy) + 'px';
+    el.style.left = (startL + e.clientX - startX) + 'px';
+    el.style.top = (startT + e.clientY - startY) + 'px';
   });
-
   document.addEventListener('mouseup', () => { dragging = false; });
 
-  // Тач
   el.addEventListener('touchstart', e => {
     const t = e.touches[0];
     dragging = true;
-    startX = t.clientX;
-    startY = t.clientY;
-    startL = el.offsetLeft;
-    startT = el.offsetTop;
+    startX = t.clientX; startY = t.clientY;
+    startL = el.offsetLeft; startT = el.offsetTop;
     el.style.zIndex = ++zCounter;
     selectText(el);
   }, { passive: true });
@@ -479,7 +570,6 @@ function makeDraggable(el) {
     el.style.left = (startL + t.clientX - startX) + 'px';
     el.style.top = (startT + t.clientY - startY) + 'px';
   }, { passive: true });
-
   document.addEventListener('touchend', () => { dragging = false; });
 }
 
@@ -488,10 +578,22 @@ function selectText(el) {
   el.classList.add('active');
   activeText = el;
   textControls.classList.add('show');
-  txtContent.value = el.textContent;
-  txtSize.value = parseInt(el.style.fontSize) || 24;
+  txtContent.value = el.textContent.replace('×','').trim() || el.textContent;
+  // Берём первый текстовый узел
+  for (const n of el.childNodes) {
+    if (n.nodeType === 3 && n.nodeValue.trim()) {
+      txtContent.value = n.nodeValue;
+      break;
+    }
+  }
+  txtSize.value = parseInt(el.style.fontSize) || 32;
   txtColor.value = rgbToHex(el.style.color) || '#ffffff';
-  txtWeight.value = el.style.fontWeight || '600';
+  txtWeight.value = el.style.fontWeight || '700';
+  // Угадываем шрифт
+  const fam = el.style.fontFamily || '';
+  for (const opt of txtFont.options) {
+    if (fam.includes(opt.value)) { txtFont.value = opt.value; break; }
+  }
 }
 
 function hideTextControls() {
@@ -500,15 +602,31 @@ function hideTextControls() {
   document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
 }
 
-// Клик по пустому месту — снять выделение
 editorStage.addEventListener('click', e => {
   if (e.target === editorStage || e.target === baseImg) hideTextControls();
 });
 
-// Изменение свойств текста
+// Изменение свойств
+function updateActiveText(fn) {
+  if (!activeText) return;
+  for (const n of activeText.childNodes) {
+    if (n.nodeType === 3) { fn(n); return; }
+  }
+}
+
 txtContent.addEventListener('input', () => {
-  if (activeText) activeText.childNodes[0].nodeValue = txtContent.value;
+  if (!activeText) return;
+  let found = false;
+  for (const n of activeText.childNodes) {
+    if (n.nodeType === 3) {
+      n.nodeValue = txtContent.value;
+      found = true;
+      break;
+    }
+  }
+  if (!found) activeText.insertBefore(document.createTextNode(txtContent.value), activeText.firstChild);
 });
+
 txtSize.addEventListener('input', () => {
   if (activeText) activeText.style.fontSize = txtSize.value + 'px';
 });
@@ -517,6 +635,11 @@ txtColor.addEventListener('input', () => {
 });
 txtWeight.addEventListener('change', () => {
   if (activeText) activeText.style.fontWeight = txtWeight.value;
+});
+txtFont.addEventListener('change', () => {
+  if (activeText) {
+    activeText.style.fontFamily = `'${txtFont.value}', sans-serif`;
+  }
 });
 txtDelete.addEventListener('click', () => {
   if (activeText) { activeText.remove(); hideTextControls(); }
@@ -530,15 +653,11 @@ function rgbToHex(rgb) {
   return '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('');
 }
 
-// ==== Скачивание с рендером ====
+// ==== Скачивание ====
 dl.addEventListener('click', async () => {
   if (!resultDataUrl) return;
-
-  // Размер берём из editorWrap
   const W = editorWrap.clientWidth;
   const H = editorWrap.clientHeight;
-
-  // Умножаем на 2 для качества
   const scale = 2;
   const canvas = document.createElement('canvas');
   canvas.width = W * scale;
@@ -546,9 +665,9 @@ dl.addEventListener('click', async () => {
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
 
-  // 1) Фон
+  // Фон
   if (currentBg.type === 'transparent') {
-    // оставляем прозрачным
+    // пусто
   } else if (currentBg.type === 'color') {
     ctx.fillStyle = currentBg.color;
     ctx.fillRect(0, 0, W, H);
@@ -574,7 +693,7 @@ dl.addEventListener('click', async () => {
     }
   }
 
-  // 2) Вырезанная картинка (object-fit: contain)
+  // Основная картинка
   const base = new Image();
   base.src = resultDataUrl;
   await base.decode();
@@ -583,18 +702,23 @@ dl.addEventListener('click', async () => {
   const bh = base.height * baseScale;
   ctx.drawImage(base, (W - bw) / 2, (H - bh) / 2, bw, bh);
 
-  // 3) Текстовые блоки
+  // Текстовые блоки
   const blocks = editorStage.querySelectorAll('.text-block');
+  // Ждём загрузки шрифтов
+  if (document.fonts) await document.fonts.ready;
   for (const el of blocks) {
-    const text = el.childNodes[0] ? el.childNodes[0].nodeValue : el.textContent;
-    const style = getComputedStyle(el);
+    let text = '';
+    for (const n of el.childNodes) {
+      if (n.nodeType === 3) text += n.nodeValue;
+    }
     const x = parseFloat(el.style.left) || 0;
     const y = parseFloat(el.style.top) || 0;
-    const fontSize = parseFloat(el.style.fontSize) || 24;
-    const fontWeight = el.style.fontWeight || '600';
+    const fontSize = parseFloat(el.style.fontSize) || 32;
+    const fontWeight = el.style.fontWeight || '700';
     const color = el.style.color || '#fff';
+    const fontFamily = el.style.fontFamily || "'Inter', sans-serif";
 
-    ctx.font = `${fontWeight} ${fontSize}px -apple-system, system-ui, sans-serif`;
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
     ctx.fillStyle = color;
     ctx.textBaseline = 'top';
     ctx.shadowColor = 'rgba(0,0,0,0.4)';
@@ -606,7 +730,6 @@ dl.addEventListener('click', async () => {
     ctx.shadowOffsetY = 0;
   }
 
-  // Скачивание
   canvas.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
@@ -628,6 +751,7 @@ reset.addEventListener('click', () => {
   currentBg = { type: 'transparent' };
   editorWrap.style.width = '500px';
   editorWrap.style.height = '500px';
+  updateSizeLabel();
   hideTextControls();
   document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
   setStatus('');
