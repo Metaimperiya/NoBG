@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Редактор: фон + блоки + стикеры + рамка</title>
+<title>Редактор: фон + стикеры + рамка</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -165,7 +165,7 @@
   }
   .text-block.active .del { display: block; }
 
-  /* ===== ЧИСТАЯ ЦВЕТНАЯ ПЛАШКА БЕЗ ТЕКСТА ===== */
+  /* ===== ЦВЕТНАЯ ПЛАШКА БЕЗ ТЕКСТА ===== */
   .color-block {
     position: absolute;
     cursor: move;
@@ -362,8 +362,8 @@
 </head>
 <body>
 
-<h1>🪄 Редактор: фон + блоки + стикеры + рамка</h1>
-<div class="sub">Картинка, плашки, стикеры, текст, слои, рамка — всё в одном</div>
+<h1>🪄 Редактор: фон + стикеры + рамка</h1>
+<div class="sub">Картинка, стикеры, текст, плашки, слои, рамка — всё в одном</div>
 
 <div class="drop" id="drop">
   📁 Нажми или перетащи сюда картинку
@@ -501,9 +501,9 @@
     <button id="txtDelete">🗑 Удалить</button>
   </div>
 
-  <!-- ПЛАШКА БЕЗ ТЕКСТА -->
+  <!-- ЦВЕТНАЯ ПЛАШКА БЕЗ ТЕКСТА -->
   <div class="controls" id="blockControls">
-    <span class="ctrl-label">Плашка (чистая):</span>
+    <span class="ctrl-label">Плашка:</span>
     <div class="ctrl-group">
       <span class="ctrl-label">Цвет:</span>
       <input type="color" id="blkBg" value="#3b82f6">
@@ -617,4 +617,975 @@ const stkFlipH = $('stkFlipH'), stkDelete = $('stkDelete');
 const textControls = $('textControls');
 const txtContent = $('txtContent'), txtSize = $('txtSize'), txtColor = $('txtColor');
 const txtWeight = $('txtWeight'), txtFont = $('txtFont'), txtDelete = $('txtDelete');
-const txtOutlineOn = $('txtOutline
+const txtOutlineOn = $('txtOutlineOn'), txtOutlineColor = $('txtOutlineColor');
+const txtOutlineWidth = $('txtOutlineWidth'), txtOutlineLabel = $('txtOutlineLabel');
+const txtShadowOn = $('txtShadowOn');
+const addTextBtn = $('addText');
+const blockControls = $('blockControls');
+const blkBg = $('blkBg'), blkRadius = $('blkRadius'), blkOpacity = $('blkOpacity'), blkOpacityLabel = $('blkOpacityLabel');
+const blkRotate = $('blkRotate'), blkRotateLabel = $('blkRotateLabel');
+const blkDelete = $('blkDelete'), addBlockBtn = $('addBlock');
+const frameControls = $('frameControls'), frameBorder = $('frameBorder');
+const frameOn = $('frameOn'), frameColor = $('frameColor');
+const frameWidth = $('frameWidth'), frameWidthLabel = $('frameWidthLabel');
+const frameRadius = $('frameRadius'), frameRadiusLabel = $('frameRadiusLabel');
+const addFrameBtn = $('addFrame');
+const emojiGrid = $('emojiGrid');
+const sizeUp = $('sizeUp'), sizeDown = $('sizeDown'), sizeLabel = $('sizeLabel');
+const layersList = $('layersList');
+
+const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
+
+let resultDataUrl = null;
+let currentBg = { type: 'transparent' };
+let activeText = null;
+let activeBlock = null;
+let activeSticker = null;
+let zCounter = 10;
+let cutoutState = { x: 0, y: 0, w: 0, h: 0, naturalW: 0, naturalH: 0 };
+
+const emojis = ['😀','😂','🥰','😎','🤩','🥳','😇','🤔','🤯','😴','🤖','👽','💀','👻','🎃','🐱','🐶','🦊','🐼','🦁','🐸','🦄','🐉','🌸','🌺','🌈','⭐','✨','💫','🔥','💧','❄️','⚡','💥','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','💪','✌️','🤝','👑','💎','🎯','🎨','🎭','🎁','🎉','🎊','🏆','🥇','⚽','🏀','🎮','🎲','🍕','🍔','🍟','🍩','🍰','🍦','🍓','🍉','☕','🍺'];
+
+function setStatus(text, cls = '') {
+  status.className = 'status ' + cls;
+  status.innerHTML = text;
+}
+
+// ============ ЗАГРУЗКА ============
+drop.addEventListener('click', () => file.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  if (e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
+});
+file.addEventListener('change', e => { if (e.target.files[0]) process(e.target.files[0]); });
+
+async function process(f) {
+  if (!f.type.startsWith('image/')) { setStatus('❌ Это не картинка', 'err'); return; }
+  panel.classList.add('show');
+  cutout.style.display = 'none';
+  resultDataUrl = null;
+  dl.disabled = true;
+  setStatus('<span class="spinner"></span> Обрабатываю…');
+
+  try {
+    const blob = await removeBackground(f, {
+      publicPath: MODEL_CDN,
+      model: 'isnet_fp16',
+      device: 'cpu',
+      progress: (key, cur, total) => {
+        const pct = Math.round(cur / total * 100);
+        setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
+      }
+    });
+    if (!blob || blob.size < 100) throw new Error('Пустой результат');
+    resultDataUrl = await blobToDataURL(blob);
+    cutoutImg.src = resultDataUrl;
+    cutoutImg.onload = () => {
+      cutoutState.naturalW = cutoutImg.naturalWidth;
+      cutoutState.naturalH = cutoutImg.naturalHeight;
+      fitCutout();
+      cutout.style.display = 'block';
+      getLayerId(cutout);
+      rebuildLayers();
+    };
+    dl.disabled = false;
+    setStatus('✅ Готово!', 'ok');
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ ' + (err.message || err), 'err');
+  }
+}
+
+function blobToDataURL(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// ============ КАРТИНКА ============
+function fitCutout() {
+  const stageW = editorStage.clientWidth;
+  const stageH = editorStage.clientHeight;
+  const scale = Math.min(stageW / cutoutState.naturalW, stageH / cutoutState.naturalH) * 0.85;
+  cutoutState.w = cutoutState.naturalW * scale;
+  cutoutState.h = cutoutState.naturalH * scale;
+  cutoutState.x = (stageW - cutoutState.w) / 2;
+  cutoutState.y = (stageH - cutoutState.h) / 2;
+  applyCutout();
+  imgScale.value = 100;
+  imgScaleLabel.textContent = '100%';
+}
+function applyCutout() {
+  cutout.style.left = cutoutState.x + 'px';
+  cutout.style.top = cutoutState.y + 'px';
+  cutout.style.width = cutoutState.w + 'px';
+  cutout.style.height = cutoutState.h + 'px';
+}
+imgScale.addEventListener('input', () => {
+  const pct = parseInt(imgScale.value);
+  imgScaleLabel.textContent = pct + '%';
+  if (!cutoutState.naturalW) return;
+  const stageW = editorStage.clientWidth;
+  const stageH = editorStage.clientHeight;
+  const baseScale = Math.min(stageW / cutoutState.naturalW, stageH / cutoutState.naturalH) * 0.85;
+  const cx = cutoutState.x + cutoutState.w / 2;
+  const cy = cutoutState.y + cutoutState.h / 2;
+  const newScale = baseScale * (pct / 100);
+  cutoutState.w = cutoutState.naturalW * newScale;
+  cutoutState.h = cutoutState.naturalH * newScale;
+  cutoutState.x = cx - cutoutState.w / 2;
+  cutoutState.y = cy - cutoutState.h / 2;
+  applyCutout();
+});
+imgCenter.addEventListener('click', () => {
+  cutoutState.x = (editorStage.clientWidth - cutoutState.w) / 2;
+  cutoutState.y = (editorStage.clientHeight - cutoutState.h) / 2;
+  applyCutout();
+});
+imgFit.addEventListener('click', fitCutout);
+
+makeDraggable(cutout, {
+  onStart: () => selectCutout(),
+  onMove: (dx, dy, start) => {
+    cutoutState.x = start.x + dx;
+    cutoutState.y = start.y + dy;
+    applyCutout();
+  },
+  getStart: () => ({ x: cutoutState.x, y: cutoutState.y })
+});
+makeResizable(cutout, () => {
+  cutoutState.w = cutout.offsetWidth;
+  cutoutState.h = cutout.offsetHeight;
+  cutoutState.x = cutout.offsetLeft;
+  cutoutState.y = cutout.offsetTop;
+});
+
+function selectCutout() {
+  cutout.classList.add('active');
+  hideAllControls();
+  deselectText(); deselectBlock(); deselectSticker();
+  imgControls.classList.add('show');
+  highlightLayer(cutout);
+}
+
+// ============ СТИКЕРЫ ============
+function addSticker(src) {
+  const el = document.createElement('div');
+  el.className = 'sticker';
+  el.style.width = '120px';
+  el.style.height = '120px';
+  el.style.left = '100px';
+  el.style.top = '100px';
+  el.style.zIndex = ++zCounter;
+  el.dataset.rotate = 0;
+  el.dataset.flip = 'off';
+
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = 'Стикер';
+  el.appendChild(img);
+
+  const del = document.createElement('button');
+  del.className = 'del';
+  del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
+  el.appendChild(del);
+
+  const h1 = document.createElement('div'); h1.className = 'handle tl'; el.appendChild(h1);
+  const h2 = document.createElement('div'); h2.className = 'handle br'; el.appendChild(h2);
+
+  editorStage.appendChild(el);
+  makeDraggable(el, { onStart: () => selectSticker(el) });
+  makeResizable(el, null);
+  selectSticker(el);
+  rebuildLayers();
+  return el;
+}
+
+function emojiToSvgUrl(emoji) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+    <text x="100" y="100" font-size="170" text-anchor="middle" dominant-baseline="central" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">${emoji}</text>
+  </svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+emojis.forEach(e => {
+  const btn = document.createElement('button');
+  btn.className = 'emoji-item';
+  btn.textContent = e;
+  btn.addEventListener('click', () => addSticker(emojiToSvgUrl(e)));
+  emojiGrid.appendChild(btn);
+});
+
+stickerUpload.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  addSticker(url);
+  stickerUpload.value = '';
+});
+
+function selectSticker(el) {
+  cutout.classList.remove('active');
+  deselectText(); deselectBlock();
+  document.querySelectorAll('.sticker').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  activeSticker = el;
+  hideAllControls();
+  stickerControls.classList.add('show');
+  const rot = parseFloat(el.dataset.rotate || 0);
+  stkRotate.value = rot;
+  stkRotateLabel.textContent = rot + '°';
+  const op = Math.round(parseFloat(el.style.opacity || 1) * 100);
+  stkOpacity.value = op;
+  stkOpacityLabel.textContent = op + '%';
+  highlightLayer(el);
+}
+function deselectSticker() {
+  document.querySelectorAll('.sticker').forEach(s => s.classList.remove('active'));
+  activeSticker = null;
+}
+function applyStickerTransform(el) {
+  const rot = parseFloat(el.dataset.rotate || 0);
+  const flip = el.dataset.flip === 'on';
+  el.style.transform = `rotate(${rot}deg) scaleX(${flip ? -1 : 1})`;
+}
+
+stkRotate.addEventListener('input', () => {
+  if (!activeSticker) return;
+  stkRotateLabel.textContent = stkRotate.value + '°';
+  activeSticker.dataset.rotate = stkRotate.value;
+  applyStickerTransform(activeSticker);
+});
+stkOpacity.addEventListener('input', () => {
+  if (!activeSticker) return;
+  stkOpacityLabel.textContent = stkOpacity.value + '%';
+  activeSticker.style.opacity = stkOpacity.value / 100;
+});
+stkFlipH.addEventListener('click', () => {
+  if (!activeSticker) return;
+  activeSticker.dataset.flip = activeSticker.dataset.flip === 'on' ? 'off' : 'on';
+  applyStickerTransform(activeSticker);
+});
+stkDelete.addEventListener('click', () => {
+  if (activeSticker) { activeSticker.remove(); hideAllControls(); activeSticker = null; rebuildLayers(); }
+});
+
+// ============ РАЗМЕР РЕДАКТОРА ============
+function updateSizeLabel() {
+  sizeLabel.textContent = editorWrap.clientWidth + ' × ' + editorWrap.clientHeight;
+}
+sizeUp.addEventListener('click', () => {
+  editorWrap.style.width = (editorWrap.clientWidth + 50) + 'px';
+  editorWrap.style.height = (editorWrap.clientHeight + 50) + 'px';
+  updateSizeLabel();
+});
+sizeDown.addEventListener('click', () => {
+  editorWrap.style.width = Math.max(200, editorWrap.clientWidth - 50) + 'px';
+  editorWrap.style.height = Math.max(200, editorWrap.clientHeight - 50) + 'px';
+  updateSizeLabel();
+});
+document.querySelectorAll('.size-bar button[data-size]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const [w, h] = btn.dataset.size.split('x').map(Number);
+    editorWrap.style.width = w + 'px';
+    editorWrap.style.height = h + 'px';
+    updateSizeLabel();
+  });
+});
+new ResizeObserver(updateSizeLabel).observe(editorWrap);
+
+// ============ РАМКА ============
+function applyFrame() {
+  const on = frameOn.checked;
+  const w = parseInt(frameWidth.value);
+  const r = parseInt(frameRadius.value);
+  const c = frameColor.value;
+  if (!on) {
+    frameBorder.style.display = 'none';
+    return;
+  }
+  frameBorder.style.display = 'block';
+  frameBorder.style.border = `${w}px solid ${c}`;
+  frameBorder.style.borderRadius = r + 'px';
+}
+frameOn.addEventListener('change', applyFrame);
+frameColor.addEventListener('input', applyFrame);
+frameWidth.addEventListener('input', () => {
+  frameWidthLabel.textContent = frameWidth.value + 'px';
+  applyFrame();
+});
+frameRadius.addEventListener('input', () => {
+  frameRadiusLabel.textContent = frameRadius.value + 'px';
+  applyFrame();
+});
+addFrameBtn.addEventListener('click', () => {
+  frameOn.checked = true;
+  applyFrame();
+  frameControls.classList.add('show');
+  frameControls.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+// ============ ФОНЫ ============
+bgGrid.addEventListener('click', e => {
+  const item = e.target.closest('.bg-item');
+  if (!item) return;
+  document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
+  item.classList.add('active');
+
+  if (item.dataset.type === 'transparent') {
+    currentBg = { type: 'transparent' };
+    editorStage.style.background = '';
+    editorStage.style.backgroundImage = `
+      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)`;
+    editorStage.style.backgroundSize = '20px 20px';
+    editorStage.style.backgroundPosition = '0 0, 0 10px, 10px -10px, -10px 0';
+  } else if (item.dataset.type === 'color') {
+    currentBg = { type: 'color', color: item.dataset.color };
+    editorStage.style.backgroundImage = 'none';
+    editorStage.style.background = item.dataset.color;
+  } else if (item.dataset.type === 'gradient') {
+    currentBg = { type: 'gradient', grad: item.dataset.grad };
+    editorStage.style.backgroundImage = 'none';
+    editorStage.style.background = item.dataset.grad;
+  } else if (item.dataset.type === 'image') {
+    currentBg = { type: 'image', src: item.dataset.src };
+    editorStage.style.background = `url(${item.dataset.src}) center/cover no-repeat`;
+  }
+});
+
+bgUpload.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  currentBg = { type: 'image', src: url };
+  editorStage.style.background = `url(${url}) center/cover no-repeat`;
+  document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
+  const item = document.createElement('div');
+  item.className = 'bg-item active';
+  item.style.backgroundImage = `url(${url})`;
+  item.dataset.type = 'image';
+  item.dataset.src = url;
+  bgGrid.prepend(item);
+});
+
+// ============ DRAG / RESIZE ============
+function makeDraggable(el, opts) {
+  let dragging = false, startX, startY, start;
+  const onDown = (cx, cy) => {
+    dragging = true;
+    startX = cx; startY = cy;
+    start = opts.getStart ? opts.getStart() : { x: el.offsetLeft, y: el.offsetTop };
+    el.style.zIndex = ++zCounter;
+    if (opts.onStart) opts.onStart();
+  };
+  const onMove = (cx, cy) => {
+    if (!dragging) return;
+    const dx = cx - startX;
+    const dy = cy - startY;
+    if (opts.onMove) opts.onMove(dx, dy, start);
+    else {
+      el.style.left = (start.x + dx) + 'px';
+      el.style.top = (start.y + dy) + 'px';
+    }
+  };
+  const onUp = () => { dragging = false; };
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('del') || e.target.classList.contains('handle')) return;
+    onDown(e.clientX, e.clientY);
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  document.addEventListener('mouseup', onUp);
+
+  el.addEventListener('touchstart', e => {
+    if (e.target.classList.contains('del') || e.target.classList.contains('handle')) return;
+    const t = e.touches[0];
+    onDown(t.clientX, t.clientY);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+  }, { passive: true });
+  document.addEventListener('touchend', onUp);
+}
+
+function makeResizable(el, onChange) {
+  const handles = el.querySelectorAll('.handle');
+  handles.forEach(h => {
+    let resizing = false, startX, startY, startW, startH, startL, startT, dir;
+    const start = (cx, cy) => {
+      resizing = true;
+      startX = cx; startY = cy;
+      startW = el.offsetWidth;
+      startH = el.offsetHeight;
+      startL = el.offsetLeft;
+      startT = el.offsetTop;
+      dir = h.classList.contains('tl') ? 'tl' : 'br';
+    };
+    const move = (cx, cy) => {
+      if (!resizing) return;
+      const dx = cx - startX;
+      const dy = cy - startY;
+      let w, hh, l, t;
+      if (dir === 'br') {
+        w = Math.max(20, startW + dx);
+        hh = Math.max(20, startH + dy);
+        l = startL; t = startT;
+      } else {
+        w = Math.max(20, startW - dx);
+        hh = Math.max(20, startH - dy);
+        l = startL + (startW - w);
+        t = startT + (startH - hh);
+      }
+      el.style.width = w + 'px';
+      el.style.height = hh + 'px';
+      el.style.left = l + 'px';
+      el.style.top = t + 'px';
+      if (onChange) onChange();
+    };
+    const end = () => { resizing = false; };
+
+    h.addEventListener('mousedown', e => {
+      start(e.clientX, e.clientY);
+      e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+    document.addEventListener('mouseup', end);
+
+    h.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      start(t.clientX, t.clientY);
+      e.stopPropagation();
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (!resizing) return;
+      const t = e.touches[0];
+      move(t.clientX, t.clientY);
+    }, { passive: true });
+    document.addEventListener('touchend', end);
+  });
+}
+
+// ============ СЛОИ ============
+function getLayers() {
+  const layers = [];
+  if (cutout.style.display !== 'none' && cutoutImg.src) {
+    layers.push({ el: cutout, name: 'Картинка', icon: '🖼️' });
+  }
+  editorStage.querySelectorAll('.sticker, .text-block, .color-block').forEach(el => {
+    if (el.classList.contains('sticker')) {
+      layers.push({ el, name: 'Стикер', icon: '😀' });
+    } else if (el.classList.contains('text-block')) {
+      let text = '';
+      for (const n of el.childNodes) if (n.nodeType === 3) text += n.nodeValue;
+      layers.push({ el, name: text.slice(0, 20) || 'Текст', icon: '📝' });
+    } else {
+      layers.push({ el, name: 'Плашка', icon: '🟦' });
+    }
+  });
+  layers.sort((a, b) => (parseInt(b.el.style.zIndex) || 0) - (parseInt(a.el.style.zIndex) || 0));
+  return layers;
+}
+
+function rebuildLayers() {
+  const layers = getLayers();
+  layersList.innerHTML = '';
+  layers.forEach(layer => {
+    const item = document.createElement('div');
+    item.className = 'layer-item';
+    if (layer.el.classList.contains('active')) item.classList.add('active');
+    if (layer.el.style.display === 'none') item.classList.add('hidden-layer');
+    item.draggable = true;
+    item.dataset.layerId = getLayerId(layer.el);
+
+    const icon = document.createElement('div');
+    icon.className = 'icon'; icon.textContent = layer.icon;
+    item.appendChild(icon);
+
+    const name = document.createElement('div');
+    name.className = 'name'; name.textContent = layer.name;
+    item.appendChild(name);
+
+    const eye = document.createElement('button');
+    eye.className = 'eye';
+    eye.textContent = layer.el.style.display === 'none' ? '🚫' : '👁';
+    eye.addEventListener('click', e => {
+      e.stopPropagation();
+      layer.el.style.display = layer.el.style.display === 'none' ? '' : 'none';
+      rebuildLayers();
+    });
+    item.appendChild(eye);
+
+    item.addEventListener('click', () => selectLayer(layer.el));
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', item.dataset.layerId);
+      item.classList.add('dragging');
+    });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const fromId = e.dataTransfer.getData('text/plain');
+      const toId = item.dataset.layerId;
+      if (fromId === toId) return;
+      reorderLayer(fromId, toId);
+    });
+
+    layersList.appendChild(item);
+  });
+}
+
+function getLayerId(el) {
+  if (!el.dataset.layerId) {
+    el.dataset.layerId = 'layer_' + Math.random().toString(36).slice(2, 9);
+  }
+  return el.dataset.layerId;
+}
+
+function reorderLayer(fromId, toId) {
+  const fromEl = editorStage.querySelector(`[data-layer-id="${fromId}"]`);
+  const toEl = editorStage.querySelector(`[data-layer-id="${toId}"]`);
+  if (!fromEl || !toEl) return;
+  const fromZ = parseInt(fromEl.style.zIndex) || 0;
+  const toZ = parseInt(toEl.style.zIndex) || 0;
+  if (fromZ < toZ) {
+    fromEl.style.zIndex = toZ + 1;
+    editorStage.querySelectorAll('[data-layer-id]').forEach(el => {
+      if (el === fromEl || el === toEl) return;
+      const z = parseInt(el.style.zIndex) || 0;
+      if (z > toZ && z <= fromZ) el.style.zIndex = z - 1;
+    });
+  } else {
+    fromEl.style.zIndex = toZ - 1;
+    editorStage.querySelectorAll('[data-layer-id]').forEach(el => {
+      if (el === fromEl || el === toEl) return;
+      const z = parseInt(el.style.zIndex) || 0;
+      if (z < toZ && z >= fromZ) el.style.zIndex = z + 1;
+    });
+  }
+  zCounter = Math.max(zCounter, ...getLayers().map(l => parseInt(l.el.style.zIndex) || 0)) + 1;
+  rebuildLayers();
+}
+
+function selectLayer(el) {
+  if (el === cutout) { selectCutout(); return; }
+  if (el.classList.contains('sticker')) { selectSticker(el); return; }
+  if (el.classList.contains('text-block')) { selectText(el); return; }
+  if (el.classList.contains('color-block')) { selectBlock(el); return; }
+}
+function highlightLayer(el) {
+  const id = getLayerId(el);
+  layersList.querySelectorAll('.layer-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.layerId === id);
+  });
+}
+
+// ============ ТЕКСТ ============
+addTextBtn.addEventListener('click', () => {
+  const el = document.createElement('div');
+  el.className = 'text-block';
+  el.textContent = 'Ваш текст';
+  el.style.left = '40px'; el.style.top = '40px';
+  el.style.fontSize = '32px'; el.style.color = '#ffffff';
+  el.style.fontWeight = '700';
+  el.style.fontFamily = "'Inter', sans-serif";
+  el.style.zIndex = ++zCounter;
+  el.style.textShadow = '0 2px 8px rgba(0,0,0,0.4)';
+  el.dataset.outline = 'off';
+  el.dataset.outlineColor = '#000000';
+  el.dataset.outlineWidth = '3';
+  el.dataset.shadow = 'on';
+
+  const del = document.createElement('button');
+  del.className = 'del'; del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
+  el.appendChild(del);
+
+  editorStage.appendChild(el);
+  makeDraggable(el, { onStart: () => selectText(el) });
+  selectText(el);
+  rebuildLayers();
+});
+
+function applyTextStyle(el) {
+  const outline = el.dataset.outline === 'on';
+  const outlineColor = el.dataset.outlineColor || '#000000';
+  const outlineWidth = parseInt(el.dataset.outlineWidth || 3);
+  const shadow = el.dataset.shadow === 'on';
+  const shadows = [];
+  if (outline) {
+    const w = outlineWidth;
+    for (let x = -w; x <= w; x++) {
+      for (let y = -w; y <= w; y++) {
+        if (x === 0 && y === 0) continue;
+        if (Math.abs(x) + Math.abs(y) > w + 1) continue;
+        shadows.push(`${x}px ${y}px 0 ${outlineColor}`);
+      }
+    }
+  }
+  if (shadow) shadows.push('0 2px 8px rgba(0,0,0,0.4)');
+  el.style.textShadow = shadows.length ? shadows.join(', ') : 'none';
+}
+
+function selectText(el) {
+  deselectBlock(); deselectSticker();
+  cutout.classList.remove('active');
+  document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeText = el;
+  hideAllControls();
+  textControls.classList.add('show');
+
+  for (const n of el.childNodes) {
+    if (n.nodeType === 3 && n.nodeValue.trim()) { txtContent.value = n.nodeValue; break; }
+  }
+  txtSize.value = parseInt(el.style.fontSize) || 32;
+  txtColor.value = rgbToHex(el.style.color) || '#ffffff';
+  txtWeight.value = el.style.fontWeight || '700';
+  const fam = el.style.fontFamily || '';
+  for (const opt of txtFont.options) if (fam.includes(opt.value)) { txtFont.value = opt.value; break; }
+  txtOutlineOn.checked = el.dataset.outline === 'on';
+  txtOutlineColor.value = el.dataset.outlineColor || '#000000';
+  txtOutlineWidth.value = el.dataset.outlineWidth || 3;
+  txtOutlineLabel.textContent = (el.dataset.outlineWidth || 3) + 'px';
+  txtShadowOn.checked = el.dataset.shadow !== 'off';
+  highlightLayer(el);
+}
+function deselectText() {
+  document.querySelectorAll('.text-block').forEach(b => b.classList.remove('active'));
+  activeText = null;
+}
+
+txtContent.addEventListener('input', () => {
+  if (!activeText) return;
+  let found = false;
+  for (const n of activeText.childNodes) {
+    if (n.nodeType === 3) { n.nodeValue = txtContent.value; found = true; break; }
+  }
+  if (!found) activeText.insertBefore(document.createTextNode(txtContent.value), activeText.firstChild);
+  rebuildLayers();
+});
+txtSize.addEventListener('input', () => { if (activeText) activeText.style.fontSize = txtSize.value + 'px'; });
+txtColor.addEventListener('input', () => { if (activeText) activeText.style.color = txtColor.value; });
+txtWeight.addEventListener('change', () => { if (activeText) activeText.style.fontWeight = txtWeight.value; });
+txtFont.addEventListener('change', () => { if (activeText) activeText.style.fontFamily = `'${txtFont.value}', sans-serif`; });
+txtOutlineOn.addEventListener('change', () => { if (!activeText) return; activeText.dataset.outline = txtOutlineOn.checked ? 'on' : 'off'; applyTextStyle(activeText); });
+txtOutlineColor.addEventListener('input', () => { if (!activeText) return; activeText.dataset.outlineColor = txtOutlineColor.value; applyTextStyle(activeText); });
+txtOutlineWidth.addEventListener('input', () => {
+  txtOutlineLabel.textContent = txtOutlineWidth.value + 'px';
+  if (!activeText) return;
+  activeText.dataset.outlineWidth = txtOutlineWidth.value;
+  applyTextStyle(activeText);
+});
+txtShadowOn.addEventListener('change', () => { if (!activeText) return; activeText.dataset.shadow = txtShadowOn.checked ? 'on' : 'off'; applyTextStyle(activeText); });
+txtDelete.addEventListener('click', () => { if (activeText) { activeText.remove(); hideAllControls(); activeText = null; rebuildLayers(); } });
+
+// ============ ПЛАШКА (БЕЗ ТЕКСТА) ============
+addBlockBtn.addEventListener('click', () => {
+  const el = document.createElement('div');
+  el.className = 'color-block';
+  el.style.left = '80px'; el.style.top = '80px';
+  el.style.width = '200px'; el.style.height = '100px';
+  el.style.background = '#3b82f6';
+  el.style.borderRadius = '12px';
+  el.style.zIndex = ++zCounter;
+
+  const del = document.createElement('button');
+  del.className = 'del'; del.textContent = '×';
+  del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
+  el.appendChild(del);
+  const h1 = document.createElement('div'); h1.className = 'handle tl'; el.appendChild(h1);
+  const h2 = document.createElement('div'); h2.className = 'handle br'; el.appendChild(h2);
+
+  editorStage.appendChild(el);
+  makeDraggable(el, { onStart: () => selectBlock(el) });
+  makeResizable(el, null);
+  selectBlock(el);
+  rebuildLayers();
+});
+
+function selectBlock(el) {
+  deselectText(); deselectSticker();
+  cutout.classList.remove('active');
+  document.querySelectorAll('.color-block').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  activeBlock = el;
+  hideAllControls();
+  blockControls.classList.add('show');
+  blkBg.value = rgbToHex(el.style.background || el.style.backgroundColor) || '#3b82f6';
+  blkRadius.value = parseInt(el.style.borderRadius) || 12;
+  const op = Math.round(parseFloat(el.style.opacity || 1) * 100);
+  blkOpacity.value = op; blkOpacityLabel.textContent = op + '%';
+  const rot = parseFloat(el.dataset.rotate || 0);
+  blkRotate.value = rot; blkRotateLabel.textContent = rot + '°';
+  highlightLayer(el);
+}
+function deselectBlock() {
+  document.querySelectorAll('.color-block').forEach(b => b.classList.remove('active'));
+  activeBlock = null;
+}
+blkBg.addEventListener('input', () => { if (activeBlock) activeBlock.style.background = blkBg.value; });
+blkRadius.addEventListener('input', () => { if (activeBlock) activeBlock.style.borderRadius = blkRadius.value + 'px'; });
+blkOpacity.addEventListener('input', () => {
+  if (!activeBlock) return;
+  blkOpacityLabel.textContent = blkOpacity.value + '%';
+  activeBlock.style.opacity = blkOpacity.value / 100;
+});
+blkRotate.addEventListener('input', () => {
+  if (!activeBlock) return;
+  blkRotateLabel.textContent = blkRotate.value + '°';
+  activeBlock.dataset.rotate = blkRotate.value;
+  activeBlock.style.transform = `rotate(${blkRotate.value}deg)`;
+});
+blkDelete.addEventListener('click', () => {
+  if (activeBlock) { activeBlock.remove(); hideAllControls(); activeBlock = null; rebuildLayers(); }
+});
+
+// ============ КЛИКИ ============
+editorStage.addEventListener('click', e => {
+  const sticker = e.target.closest('.sticker');
+  const block = e.target.closest('.color-block');
+  const text = e.target.closest('.text-block');
+  if (sticker) { selectSticker(sticker); return; }
+  if (block) { selectBlock(block); return; }
+  if (text) { selectText(text); return; }
+  if (e.target === editorStage) {
+    cutout.classList.remove('active');
+    hideAllControls();
+    deselectText(); deselectBlock(); deselectSticker();
+    rebuildLayers();
+  }
+});
+
+function hideAllControls() {
+  imgControls.classList.remove('show');
+  stickerControls.classList.remove('show');
+  textControls.classList.remove('show');
+  blockControls.classList.remove('show');
+}
+
+function rgbToHex(rgb) {
+  if (!rgb) return null;
+  if (rgb.startsWith('#')) return rgb;
+  if (rgb === 'transparent') return '#ffffff';
+  const m = rgb.match(/\d+/g);
+  if (!m) return null;
+  return '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('');
+}
+
+// ============ СКАЧИВАНИЕ ============
+dl.addEventListener('click', async () => {
+  if (!resultDataUrl) return;
+  const W = editorWrap.clientWidth;
+  const H = editorWrap.clientHeight;
+  const scale = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  if (currentBg.type === 'transparent') {
+    // пусто
+  } else if (currentBg.type === 'color') {
+    ctx.fillStyle = currentBg.color; ctx.fillRect(0, 0, W, H);
+  } else if (currentBg.type === 'gradient') {
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
+    colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  } else if (currentBg.type === 'image') {
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+    bgImg.src = currentBg.src;
+    try {
+      await bgImg.decode();
+      const bgScale = Math.max(W / bgImg.width, H / bgImg.height);
+      const bw = bgImg.width * bgScale;
+      const bh = bgImg.height * bgScale;
+      ctx.drawImage(bgImg, (W - bw) / 2, (H - bh) / 2, bw, bh);
+    } catch (e) {
+      ctx.fillStyle = '#eee'; ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  const allElements = [...editorStage.children].filter(el =>
+    el.classList.contains('cutout') ||
+    el.classList.contains('sticker') ||
+    el.classList.contains('text-block') ||
+    el.classList.contains('color-block')
+  );
+  allElements.sort((a, b) => (parseInt(a.style.zIndex) || 0) - (parseInt(b.style.zIndex) || 0));
+
+  if (document.fonts) await document.fonts.ready;
+
+  for (const el of allElements) {
+    if (el.style.display === 'none') continue;
+
+    if (el === cutout) {
+      const base = new Image();
+      base.src = resultDataUrl;
+      await base.decode();
+      ctx.drawImage(base, cutoutState.x, cutoutState.y, cutoutState.w, cutoutState.h);
+    } else if (el.classList.contains('sticker')) {
+      const x = parseFloat(el.style.left) || 0;
+      const y = parseFloat(el.style.top) || 0;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const rot = parseFloat(el.dataset.rotate || 0);
+      const flip = el.dataset.flip === 'on';
+      const op = parseFloat(el.style.opacity || 1);
+      const img = el.querySelector('img');
+      try {
+        await img.decode();
+        ctx.save();
+        ctx.globalAlpha = op;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(rot * Math.PI / 180);
+        ctx.scale(flip ? -1 : 1, 1);
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        ctx.restore();
+      } catch (e) { console.warn(e); }
+    } else if (el.classList.contains('text-block')) {
+      let text = '';
+      for (const n of el.childNodes) if (n.nodeType === 3) text += n.nodeValue;
+      const x = parseFloat(el.style.left) || 0;
+      const y = parseFloat(el.style.top) || 0;
+      const fontSize = parseFloat(el.style.fontSize) || 32;
+      const fontWeight = el.style.fontWeight || '700';
+      const color = el.style.color || '#fff';
+      const fontFamily = el.style.fontFamily || "'Inter', sans-serif";
+      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      ctx.textBaseline = 'top';
+
+      const outline = el.dataset.outline === 'on';
+      const outlineColor = el.dataset.outlineColor || '#000000';
+      const outlineWidth = parseInt(el.dataset.outlineWidth || 3);
+      const shadow = el.dataset.shadow !== 'off';
+
+      if (shadow) {
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+      }
+      if (outline) {
+        ctx.fillStyle = outlineColor;
+        for (let r = 1; r <= outlineWidth; r++) {
+          for (let ang = 0; ang < 360; ang += 30) {
+            const rad = ang * Math.PI / 180;
+            ctx.fillText(text, x + 8 + Math.cos(rad) * r, y + 4 + Math.sin(rad) * r);
+          }
+        }
+      }
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.fillStyle = color;
+      ctx.fillText(text, x + 8, y + 4);
+    } else if (el.classList.contains('color-block')) {
+      const x = parseFloat(el.style.left) || 0;
+      const y = parseFloat(el.style.top) || 0;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const radius = parseFloat(el.style.borderRadius) || 0;
+      const bg = el.style.background || el.style.backgroundColor || '#3b82f6';
+      const opacity = parseFloat(el.style.opacity || 1);
+      const rot = parseFloat(el.dataset.rotate || 0);
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      if (rot) {
+        const cx = x + w / 2; const cy = y + h / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(rot * Math.PI / 180);
+        ctx.translate(-cx, -cy);
+      }
+      roundRect(ctx, x, y, w, h, radius);
+      ctx.fillStyle = bg;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  if (frameOn.checked) {
+    const w = parseInt(frameWidth.value);
+    const r = parseInt(frameRadius.value);
+    const c = frameColor.value;
+    ctx.save();
+    if (r > 0) {
+      roundRect(ctx, w / 2, w / 2, W - w, H - w, r);
+      ctx.lineWidth = w;
+      ctx.strokeStyle = c;
+      ctx.stroke();
+    } else {
+      ctx.lineWidth = w;
+      ctx.strokeStyle = c;
+      ctx.strokeRect(w / 2, w / 2, W - w, H - w);
+    }
+    ctx.restore();
+  }
+
+  canvas.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = 'result.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, 'image/png');
+});
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// ============ СБРОС ============
+reset.addEventListener('click', () => {
+  panel.classList.remove('show');
+  cutoutImg.removeAttribute('src');
+  cutout.style.display = 'none';
+  editorStage.querySelectorAll('.text-block, .color-block, .sticker').forEach(b => b.remove());
+  editorStage.style.background = '';
+  file.value = '';
+  bgUpload.value = '';
+  stickerUpload.value = '';
+  resultDataUrl = null;
+  currentBg = { type: 'transparent' };
+  editorWrap.style.width = '500px';
+  editorWrap.style.height = '500px';
+  updateSizeLabel();
+  hideAllControls();
+  deselectText(); deselectBlock(); deselectSticker();
+  cutout.classList.remove('active');
+  document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
+  frameOn.checked = false;
+  applyFrame();
+  rebuildLayers();
+  setStatus('');
+});
+
+rebuildLayers();
+applyFrame();
+</script>
+</body>
+</html>
