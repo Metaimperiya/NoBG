@@ -2,253 +2,319 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Удаление фона</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: system-ui, sans-serif;
-    background: #1a1a2e;
-    color: #eee;
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #f5f5f7;
+    color: #222;
     min-height: 100vh;
+    padding: 30px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 20px;
   }
-  h1 { margin-bottom: 20px; font-size: 24px; }
-  .drop-zone {
-    width: 100%; max-width: 600px;
-    border: 2px dashed #555;
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 24px; }
+
+  .drop {
+    width: 100%; max-width: 520px;
+    border: 2px dashed #c0c0c8;
     border-radius: 16px;
-    padding: 40px;
+    padding: 36px 20px;
     text-align: center;
     cursor: pointer;
-    transition: 0.2s;
-    background: #16213e;
+    background: #fff;
+    transition: 0.15s;
+    font-size: 15px;
+    color: #444;
   }
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: #4ade80;
-    background: #1e2a4a;
+  .drop:hover, .drop.over {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #1d4ed8;
   }
-  .drop-zone p { color: #aaa; margin-top: 8px; font-size: 14px; }
+  .drop small { display: block; color: #999; font-size: 12px; margin-top: 6px; }
   input[type=file] { display: none; }
-  .controls {
-    margin-top: 20px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  button, select {
-    padding: 10px 18px;
-    border-radius: 10px;
-    border: none;
+
+  .status {
+    margin-top: 16px;
     font-size: 14px;
-    cursor: pointer;
-    background: #4ade80;
-    color: #111;
-    font-weight: 600;
-    transition: 0.2s;
-  }
-  button:hover { background: #22c55e; }
-  button:disabled { background: #444; color: #888; cursor: not-allowed; }
-  select { background: #0f3460; color: #eee; }
-  .preview {
-    margin-top: 30px;
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .preview div {
-    background: #16213e;
-    padding: 12px;
-    border-radius: 12px;
+    color: #666;
+    min-height: 20px;
     text-align: center;
   }
-  .preview h3 { font-size: 14px; margin-bottom: 8px; color: #aaa; }
-  .preview img {
-    max-width: 300px;
-    max-height: 300px;
-    border-radius: 8px;
-    display: block;
-    background:
-      linear-gradient(45deg, #333 25%, transparent 25%),
-      linear-gradient(-45deg, #333 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #333 75%),
-      linear-gradient(-45deg, transparent 75%, #333 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-  }
-  #loader {
+  .status.err { color: #dc2626; }
+  .status.ok  { color: #16a34a; }
+
+  .panel {
     display: none;
-    margin-top: 20px;
-    color: #4ade80;
+    margin-top: 24px;
+    width: 100%;
+    max-width: 900px;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
   }
+  .panel.show { display: flex; }
+
+  .row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card h3 {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .card img {
+    max-width: 340px;
+    max-height: 340px;
+    display: block;
+    border-radius: 6px;
+    background:
+      linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+      linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+  select, button {
+    font: inherit;
+    font-size: 14px;
+    padding: 9px 16px;
+    border-radius: 9px;
+    border: 1px solid #d0d0d8;
+    background: #fff;
+    cursor: pointer;
+    color: #222;
+  }
+  button.primary {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+    font-weight: 600;
+  }
+  button.primary:hover { background: #2563eb; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid #ccc;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: -2px;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<h1>🪄 Удаление фона из картинки</h1>
+<h1>🪄 Удаление фона</h1>
+<div class="sub">Загрузи картинку — фон исчезнет автоматически</div>
 
-<div class="drop-zone" id="dropZone">
-  <div>📁 Нажми или перетащи картинку сюда</div>
-  <p>Поддерживаются JPG, PNG, WEBP</p>
-  <input type="file" id="fileInput" accept="image/*">
+<div class="drop" id="drop">
+  📁 Нажми или перетащи сюда картинку
+  <small>JPG · PNG · WEBP</small>
 </div>
 
-<div id="loader">⏳ Обрабатываю... первый раз может занять 10-20 сек (скачивается модель)</div>
+<input type="file" id="file" accept="image/*">
 
-<div class="controls" id="controls" style="display:none">
-  <select id="bgColor">
-    <option value="transparent">Прозрачный</option>
-    <option value="#ffffff">Белый</option>
-    <option value="#000000">Чёрный</option>
-    <option value="#ff6b6b">Красный</option>
-    <option value="#4ade80">Зелёный</option>
-    <option value="#3b82f6">Синий</option>
-  </select>
-  <button id="downloadBtn">💾 Скачать PNG</button>
-  <button id="resetBtn">🔄 Сбросить</button>
-</div>
+<div class="status" id="status"></div>
 
-<div class="preview" id="preview" style="display:none">
-  <div>
-    <h3>Оригинал</h3>
-    <img id="originalImg">
+<div class="panel" id="panel">
+  <div class="row">
+    <div class="card">
+      <h3>Оригинал</h3>
+      <img id="orig" alt="">
+    </div>
+    <div class="card">
+      <h3>Результат</h3>
+      <img id="res" alt="">
+    </div>
   </div>
-  <div>
-    <h3>Результат</h3>
-    <img id="resultImg">
+
+  <div class="actions">
+    <select id="bg">
+      <option value="transparent">Прозрачный фон</option>
+      <option value="#ffffff">Белый</option>
+      <option value="#000000">Чёрный</option>
+      <option value="#3b82f6">Синий</option>
+      <option value="#22c55e">Зелёный</option>
+      <option value="#ef4444">Красный</option>
+    </select>
+    <button class="primary" id="dl">💾 Скачать PNG</button>
+    <button id="reset">Сбросить</button>
   </div>
 </div>
 
-<!-- Библиотека для удаления фона -->
-<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/dist/browser.js"></script>
+<!-- Библиотека с jsDelivr -->
+<script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/browser.js"></script>
+
 <script>
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const loader = document.getElementById('loader');
-const preview = document.getElementById('preview');
-const controls = document.getElementById('controls');
-const originalImg = document.getElementById('originalImg');
-const resultImg = document.getElementById('resultImg');
-const bgColor = document.getElementById('bgColor');
-const downloadBtn = document.getElementById('downloadBtn');
-const resetBtn = document.getElementById('resetBtn');
+const $ = id => document.getElementById(id);
+const drop = $('drop'), file = $('file'), status = $('status');
+const panel = $('panel'), orig = $('orig'), res = $('res');
+const bg = $('bg'), dl = $('dl'), reset = $('reset');
 
-let originalFile = null;
+// ⚠️ ЯВНО УКАЗЫВАЕМ CDN С МОДЕЛЬЮ (это исправляет ошибку)
+const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
+
 let resultBlob = null;
-let originalSrc = null;
+let resultUrl  = null;
 
-// Клик по зоне
-dropZone.addEventListener('click', () => fileInput.click());
+function setStatus(text, cls = '') {
+  status.className = 'status ' + cls;
+  status.innerHTML = text;
+}
 
-// Drag & drop
-dropZone.addEventListener('dragover', e => {
+// ==== Клики / drag & drop ====
+drop.addEventListener('click', () => file.click());
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
   e.preventDefault();
-  dropZone.classList.add('dragover');
+  drop.classList.remove('over');
+  if (e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
 });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+file.addEventListener('change', e => {
+  if (e.target.files[0]) process(e.target.files[0]);
 });
 
-fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
-});
-
-async function handleFile(file) {
-  if (!file.type.startsWith('image/')) {
-    alert('Это не картинка!');
+// ==== Основная обработка ====
+async function process(f) {
+  if (!f.type.startsWith('image/')) {
+    setStatus('❌ Это не картинка', 'err');
     return;
   }
-  originalFile = file;
 
   // Показываем оригинал
-  if (originalSrc) URL.revokeObjectURL(originalSrc);
-  originalSrc = URL.createObjectURL(file);
-  originalImg.src = originalSrc;
+  orig.src = URL.createObjectURL(f);
+  panel.classList.add('show');
+  res.removeAttribute('src');
+  resultBlob = null;
 
-  loader.style.display = 'block';
-  preview.style.display = 'flex';
-  controls.style.display = 'none';
-  resultImg.src = '';
+  dl.disabled = true;
+  setStatus('<span class="spinner"></span> Загружаю модель… это займёт 10–30 сек в первый раз');
 
   try {
-    // Основная магия — удаление фона
-    const blob = await imgly.removeBackground(file, {
-      progress: (key, current, total) => {
-        loader.textContent = `⏳ ${key}: ${Math.round(current/total*100)}%`;
+    // ГЛАВНОЕ: передаём publicPath
+    const blob = await imgly.removeBackground(f, {
+      publicPath: MODEL_CDN,
+      model: 'isnet_fp16', // Используем FP16 модель (быстрее, ~80MB)
+      device: 'cpu',        // CPU надёжнее на Vercel (не требует специальных заголовков)
+      progress: (key, cur, total) => {
+        const pct = Math.round(cur / total * 100);
+        setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
       }
     });
+
+    // Проверка, что не пусто
+    if (!blob || blob.size < 100) {
+      throw new Error('Модель вернула пустой результат');
+    }
+
     resultBlob = blob;
-    await renderResult();
+    await drawResult();
 
-    loader.style.display = 'none';
-    controls.style.display = 'flex';
+    dl.disabled = false;
+    setStatus('✅ Готово!', 'ok');
+
   } catch (err) {
-    console.error(err);
-    loader.textContent = '❌ Ошибка: ' + err.message;
+    console.error('Ошибка:', err);
+    setStatus('❌ Ошибка: ' + (err.message || err), 'err');
   }
 }
 
-// Отрисовка результата с выбранным фоном
-async function renderResult() {
-  const url = URL.createObjectURL(resultBlob);
-  const img = new Image();
-  img.src = url;
-  await img.decode();
+// ==== Отрисовка результата (с учётом цвета фона) ====
+async function drawResult() {
+  if (!resultBlob) return;
+  if (resultUrl) URL.revokeObjectURL(resultUrl);
 
-  const color = bgColor.value;
+  const color = bg.value;
+
   if (color === 'transparent') {
-    resultImg.src = url;
-  } else {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-    resultImg.src = canvas.toDataURL('image/png');
+    resultUrl = URL.createObjectURL(resultBlob);
+    res.src = resultUrl;
+    return;
   }
-}
 
-bgColor.addEventListener('change', () => {
-  if (resultBlob) renderResult();
-});
-
-// Скачивание
-downloadBtn.addEventListener('click', async () => {
+  // Накладываем цвет
+  const tmpUrl = URL.createObjectURL(resultBlob);
   const img = new Image();
-  img.src = resultImg.src;
+  img.src = tmpUrl;
   await img.decode();
 
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width;
-  canvas.height = img.height;
-  canvas.getContext('2d').drawImage(img, 0, 0);
+  const c = document.createElement('canvas');
+  c.width = img.width;
+  c.height = img.height;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0);
 
-  canvas.toBlob(blob => {
+  URL.revokeObjectURL(tmpUrl);
+  res.src = c.toDataURL('image/png');
+}
+
+bg.addEventListener('change', drawResult);
+
+// ==== Скачивание ====
+dl.addEventListener('click', async () => {
+  if (!res.src) return;
+  const img = new Image();
+  img.src = res.src;
+  await img.decode();
+
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0);
+
+  c.toBlob(b => {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(b);
     a.download = 'no-bg.png';
     a.click();
-    URL.revokeObjectURL(a.href);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }, 'image/png');
 });
 
-// Сброс
-resetBtn.addEventListener('click', () => {
-  preview.style.display = 'none';
-  controls.style.display = 'none';
-  loader.style.display = 'none';
-  fileInput.value = '';
-  originalFile = null;
+// ==== Сброс ====
+reset.addEventListener('click', () => {
+  panel.classList.remove('show');
+  res.removeAttribute('src');
+  orig.removeAttribute('src');
+  file.value = '';
   resultBlob = null;
+  if (resultUrl) { URL.revokeObjectURL(resultUrl); resultUrl = null; }
+  setStatus('');
 });
 </script>
 </body>
