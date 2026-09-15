@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Удаление фона</title>
+<title>Удаление фона + замена</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -31,61 +31,22 @@
     font-size: 15px;
     color: #444;
   }
-  .drop:hover, .drop.over {
-    border-color: #3b82f6;
-    background: #eff6ff;
-    color: #1d4ed8;
-  }
+  .drop:hover, .drop.over { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
   .drop small { display: block; color: #999; font-size: 12px; margin-top: 6px; }
   input[type=file] { display: none; }
 
-  .status {
-    margin-top: 16px;
-    font-size: 14px;
-    color: #666;
-    min-height: 20px;
-    text-align: center;
-  }
+  .status { margin-top: 16px; font-size: 14px; color: #666; min-height: 20px; text-align: center; }
   .status.err { color: #dc2626; }
   .status.ok  { color: #16a34a; }
 
-  .panel {
-    display: none;
-    margin-top: 24px;
-    width: 100%;
-    max-width: 900px;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
+  .panel { display: none; margin-top: 24px; width: 100%; max-width: 900px; flex-direction: column; align-items: center; gap: 16px; }
   .panel.show { display: flex; }
 
-  .row {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-  .card h3 {
-    font-size: 12px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-    text-align: center;
-    font-weight: 500;
-  }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  .card { background: #fff; border-radius: 12px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card h3 { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; text-align: center; font-weight: 500; }
   .card img {
-    max-width: 340px;
-    max-height: 340px;
-    display: block;
-    border-radius: 6px;
+    max-width: 340px; max-height: 340px; display: block; border-radius: 6px;
     background:
       linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
       linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
@@ -95,49 +56,53 @@
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
   }
 
-  .actions {
-    display: flex;
+  /* Галерея фонов */
+  .bg-section { width: 100%; max-width: 700px; margin-top: 8px; }
+  .bg-section h3 { font-size: 13px; color: #666; margin-bottom: 10px; text-align: center; font-weight: 500; }
+  .bg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
   }
-  select, button {
-    font: inherit;
-    font-size: 14px;
-    padding: 9px 16px;
-    border-radius: 9px;
-    border: 1px solid #d0d0d8;
-    background: #fff;
+  .bg-item {
+    aspect-ratio: 1;
+    border-radius: 10px;
     cursor: pointer;
-    color: #222;
+    border: 3px solid transparent;
+    transition: 0.15s;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
   }
-  button.primary {
-    background: #3b82f6;
-    color: #fff;
-    border-color: #3b82f6;
-    font-weight: 600;
+  .bg-item:hover { transform: scale(1.05); }
+  .bg-item.active { border-color: #3b82f6; }
+  .bg-item.color-only { border: 3px solid #d0d0d8; }
+  .bg-item.color-only.active { border-color: #3b82f6; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; margin-top: 10px; }
+  button, label.upload-btn {
+    font: inherit; font-size: 14px; padding: 9px 16px; border-radius: 9px;
+    border: 1px solid #d0d0d8; background: #fff; cursor: pointer; color: #222;
+    display: inline-block;
   }
+  button.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; font-weight: 600; }
   button.primary:hover { background: #2563eb; }
   button:disabled { opacity: 0.5; cursor: wait; }
+  label.upload-btn:hover { background: #f0f0f5; }
 
   .spinner {
-    display: inline-block;
-    width: 14px; height: 14px;
-    border: 2px solid #ccc;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    vertical-align: -2px;
-    margin-right: 6px;
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid #ccc; border-top-color: #3b82f6; border-radius: 50%;
+    animation: spin 0.7s linear infinite; vertical-align: -2px; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<h1>🪄 Удаление фона</h1>
-<div class="sub">Загрузи картинку — фон исчезнет автоматически</div>
+<h1>🪄 Удаление и замена фона</h1>
+<div class="sub">Загрузи картинку, убери фон и выбери новый</div>
 
 <div class="drop" id="drop">
   📁 Нажми или перетащи сюда картинку
@@ -145,47 +110,83 @@
 </div>
 
 <input type="file" id="file" accept="image/*">
+<input type="file" id="bgUpload" accept="image/*">
 
 <div class="status" id="status"></div>
 
 <div class="panel" id="panel">
   <div class="row">
     <div class="card">
-      <h3>Оригинал</h3>
-      <img id="orig" alt="">
-    </div>
-    <div class="card">
       <h3>Результат</h3>
       <img id="res" alt="">
     </div>
   </div>
 
+  <div class="bg-section">
+    <h3>Выбери фон</h3>
+    <div class="bg-grid" id="bgGrid">
+      <!-- Прозрачный -->
+      <div class="bg-item" data-type="transparent" style="background-image:
+        linear-gradient(45deg, #e5e5e5 25%, transparent 25%),
+        linear-gradient(-45deg, #e5e5e5 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e5e5e5 75%),
+        linear-gradient(-45deg, transparent 75%, #e5e5e5 75%);
+        background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-color: #fff;"></div>
+      <!-- Цвета -->
+      <div class="bg-item color-only" data-type="color" data-color="#ffffff" style="background:#fff"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#000000" style="background:#000"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#3b82f6" style="background:#3b82f6"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#22c55e" style="background:#22c55e"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#ef4444" style="background:#ef4444"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#f59e0b" style="background:#f59e0b"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#a855f7" style="background:#a855f7"></div>
+      <div class="bg-item color-only" data-type="color" data-color="#ec4899" style="background:#ec4899"></div>
+      <!-- Градиенты -->
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #667eea, #764ba2)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #f093fb, #f5576c)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #4facfe, #00f2fe)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #43e97b, #38f9d7)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #fa709a, #fee140)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #30cfd0, #330867)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #ff9a9e, #fecfef)"></div>
+      <div class="bg-item" data-type="gradient" data-grad="linear-gradient(135deg, #a8edea, #fed6e3)"></div>
+      <!-- Северное сияние (картинки) -->
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1483347756197-71ef80e95f73?w=800&q=80"></div>
+      <!-- Природа -->
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"></div>
+      <!-- Город -->
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=800&q=80"></div>
+      <!-- Офис -->
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80"></div>
+      <!-- Студия -->
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1554147090-e1221a04a025?w=800&q=80"></div>
+      <div class="bg-item" data-type="image" data-src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80"></div>
+    </div>
+  </div>
+
   <div class="actions">
-    <select id="bg">
-      <option value="transparent">Прозрачный фон</option>
-      <option value="#ffffff">Белый</option>
-      <option value="#000000">Чёрный</option>
-      <option value="#3b82f6">Синий</option>
-      <option value="#22c55e">Зелёный</option>
-      <option value="#ef4444">Красный</option>
-    </select>
+    <label class="upload-btn" for="bgUpload">📷 Свой фон</label>
     <button class="primary" id="dl">💾 Скачать PNG</button>
     <button id="reset">Сбросить</button>
   </div>
 </div>
 
-<script src="https://unpkg.com/@imgly/background-removal@1.7.0/dist/browser.js"></script>
+<script type="module">
+import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.7.0';
 
-<script>
 const $ = id => document.getElementById(id);
 const drop = $('drop'), file = $('file'), status = $('status');
-const panel = $('panel'), orig = $('orig'), res = $('res');
-const bg = $('bg'), dl = $('dl'), reset = $('reset');
+const panel = $('panel'), res = $('res');
+const dl = $('dl'), reset = $('reset'), bgGrid = $('bgGrid'), bgUpload = $('bgUpload');
 
 const MODEL_CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
 
 let resultBlob = null;
-let resultUrl  = null;
+let currentBg = { type: 'transparent' };
 
 function setStatus(text, cls = '') {
   status.className = 'status ' + cls;
@@ -209,17 +210,14 @@ async function process(f) {
     setStatus('❌ Это не картинка', 'err');
     return;
   }
-
-  orig.src = URL.createObjectURL(f);
   panel.classList.add('show');
   res.removeAttribute('src');
   resultBlob = null;
-
   dl.disabled = true;
-  setStatus('<span class="spinner"></span> Загружаю модель… это займёт 10–30 сек в первый раз');
+  setStatus('<span class="spinner"></span> Обрабатываю… (первый раз 10–30 сек)');
 
   try {
-    const blob = await imgly.removeBackground(f, {
+    const blob = await removeBackground(f, {
       publicPath: MODEL_CDN,
       model: 'isnet_fp16',
       device: 'cpu',
@@ -228,81 +226,151 @@ async function process(f) {
         setStatus(`<span class="spinner"></span> ${key}: ${pct}%`);
       }
     });
-
-    if (!blob || blob.size < 100) {
-      throw new Error('Модель вернула пустой результат');
-    }
-
+    if (!blob || blob.size < 100) throw new Error('Пустой результат — на картинке нет объекта для вырезания');
     resultBlob = blob;
     await drawResult();
-
     dl.disabled = false;
-    setStatus('✅ Готово!', 'ok');
-
+    setStatus('✅ Готово! Выбери фон ниже', 'ok');
   } catch (err) {
-    console.error('Ошибка:', err);
-    setStatus('❌ Ошибка: ' + (err.message || err), 'err');
+    console.error(err);
+    setStatus('❌ ' + (err.message || err), 'err');
   }
 }
 
+// Отрисовка с учётом выбранного фона
 async function drawResult() {
   if (!resultBlob) return;
-  if (resultUrl) URL.revokeObjectURL(resultUrl);
 
-  const color = bg.value;
-
-  if (color === 'transparent') {
-    resultUrl = URL.createObjectURL(resultBlob);
-    res.src = resultUrl;
-    return;
-  }
-
-  const tmpUrl = URL.createObjectURL(resultBlob);
   const img = new Image();
-  img.src = tmpUrl;
+  img.src = URL.createObjectURL(resultBlob);
   await img.decode();
 
   const c = document.createElement('canvas');
   c.width = img.width;
   c.height = img.height;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, c.width, c.height);
-  ctx.drawImage(img, 0, 0);
 
-  URL.revokeObjectURL(tmpUrl);
+  if (currentBg.type === 'transparent') {
+    ctx.drawImage(img, 0, 0);
+  } else if (currentBg.type === 'color') {
+    ctx.fillStyle = currentBg.color;
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0);
+  } else if (currentBg.type === 'gradient') {
+    // Для градиента используем CSS-строку через временный элемент
+    const tmp = document.createElement('div');
+    tmp.style.background = currentBg.grad;
+    document.body.appendChild(tmp);
+    const bgStyle = getComputedStyle(tmp).backgroundImage;
+    document.body.removeChild(tmp);
+
+    const gradCanvas = document.createElement('canvas');
+    gradCanvas.width = c.width;
+    gradCanvas.height = c.height;
+    const gctx = gradCanvas.getContext('2d');
+
+    // Парсим простой линейный градиент
+    const grad = ctx.createLinearGradient(0, 0, c.width, c.height);
+    const colors = currentBg.grad.match(/#[a-fA-F0-9]{3,6}/g) || ['#667eea', '#764ba2'];
+    colors.forEach((col, i) => grad.addColorStop(i / (colors.length - 1), col));
+    gctx.fillStyle = grad;
+    gctx.fillRect(0, 0, c.width, c.height);
+
+    ctx.drawImage(gradCanvas, 0, 0);
+    ctx.drawImage(img, 0, 0);
+  } else if (currentBg.type === 'image') {
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+    bgImg.src = currentBg.src;
+    try {
+      await bgImg.decode();
+      // Масштабируем фон под размер холста (cover)
+      const scale = Math.max(c.width / bgImg.width, c.height / bgImg.height);
+      const w = bgImg.width * scale;
+      const h = bgImg.height * scale;
+      const x = (c.width - w) / 2;
+      const y = (c.height - h) / 2;
+      ctx.drawImage(bgImg, x, y, w, h);
+    } catch (e) {
+      console.warn('Не удалось загрузить фон', e);
+      ctx.fillStyle = '#eee';
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
+    ctx.drawImage(img, 0, 0);
+  }
+
   res.src = c.toDataURL('image/png');
 }
 
-bg.addEventListener('change', drawResult);
+// Клик по превью фона
+bgGrid.addEventListener('click', e => {
+  const item = e.target.closest('.bg-item');
+  if (!item) return;
 
+  document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
+  item.classList.add('active');
+
+  if (item.dataset.type === 'transparent') {
+    currentBg = { type: 'transparent' };
+  } else if (item.dataset.type === 'color') {
+    currentBg = { type: 'color', color: item.dataset.color };
+  } else if (item.dataset.type === 'gradient') {
+    currentBg = { type: 'gradient', grad: item.dataset.grad };
+  } else if (item.dataset.type === 'image') {
+    currentBg = { type: 'image', src: item.dataset.src };
+  }
+
+  if (resultBlob) drawResult();
+});
+
+// Загрузка своего фона
+bgUpload.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  currentBg = { type: 'image', src: url };
+
+  document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
+
+  // Добавляем превьюшку в галерею
+  const item = document.createElement('div');
+  item.className = 'bg-item active';
+  item.style.backgroundImage = `url(${url})`;
+  item.dataset.type = 'image';
+  item.dataset.src = url;
+  bgGrid.prepend(item);
+
+  if (resultBlob) drawResult();
+});
+
+// Скачивание
 dl.addEventListener('click', async () => {
   if (!res.src) return;
   const img = new Image();
   img.src = res.src;
   await img.decode();
-
   const c = document.createElement('canvas');
   c.width = img.naturalWidth;
   c.height = img.naturalHeight;
   c.getContext('2d').drawImage(img, 0, 0);
-
   c.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
-    a.download = 'no-bg.png';
+    a.download = 'result.png';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }, 'image/png');
 });
 
+// Сброс
 reset.addEventListener('click', () => {
   panel.classList.remove('show');
   res.removeAttribute('src');
-  orig.removeAttribute('src');
   file.value = '';
+  bgUpload.value = '';
   resultBlob = null;
-  if (resultUrl) { URL.revokeObjectURL(resultUrl); resultUrl = null; }
+  currentBg = { type: 'transparent' };
+  document.querySelectorAll('.bg-item').forEach(el => el.classList.remove('active'));
   setStatus('');
 });
 </script>
