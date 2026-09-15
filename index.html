@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Редактор: фон + блоки + слои + стикеры + рамка</title>
+<title>Редактор: фон + стикеры + рамка</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,22 +56,16 @@
   .size-bar button { padding: 5px 10px; font-size: 13px; border-radius: 6px; }
 
   .main-area {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
+    display: flex; gap: 20px; align-items: flex-start;
+    width: 100%; justify-content: center; flex-wrap: wrap;
   }
 
-  /* РЕДАКТОР */
   .editor-wrap {
     position: relative;
     width: 500px; height: 500px;
     min-width: 200px; min-height: 200px;
     max-width: 90vw; max-height: 80vh;
-    resize: both;
-    overflow: hidden;
+    resize: both; overflow: hidden;
     border: 2px solid #d0d0d8;
     border-radius: 12px;
     background: #fff;
@@ -94,17 +88,13 @@
     overflow: hidden;
   }
 
-  /* Рамка (поверх всего, но под resize-handle) */
   .frame-border {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 900;
-    border-radius: 0;
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 900;
     box-sizing: border-box;
+    display: none;
   }
 
-  /* ===== Вырезанная картинка ===== */
   .cutout {
     position: absolute;
     cursor: move;
@@ -123,7 +113,6 @@
   .cutout .handle.br { right: -7px; bottom: -7px; cursor: nwse-resize; }
   .cutout .handle.tl { left: -7px; top: -7px; cursor: nwse-resize; }
 
-  /* ===== Стикер (картинка) ===== */
   .sticker {
     position: absolute;
     cursor: move;
@@ -152,7 +141,6 @@
   }
   .sticker.active .del { display: block; }
 
-  /* ===== Текстовый блок ===== */
   .text-block {
     position: absolute;
     cursor: move;
@@ -177,7 +165,6 @@
   }
   .text-block.active .del { display: block; }
 
-  /* ===== Цветной блок ===== */
   .color-block {
     position: absolute;
     cursor: move;
@@ -209,7 +196,6 @@
   .color-block .handle.br { right: -7px; bottom: -7px; cursor: nwse-resize; }
   .color-block .handle.tl { left: -7px; top: -7px; cursor: nwse-resize; }
 
-  /* ===== Панель слоёв ===== */
   .layers-panel {
     width: 260px;
     background: #fff;
@@ -311,12 +297,9 @@
   .switch input:checked + .slider { background: #3b82f6; }
   .switch input:checked + .slider:before { transform: translateX(18px); }
 
-  /* ===== Галерея смайликов ===== */
   .emoji-section {
-    width: 100%;
-    max-width: 900px;
-    background: #fff;
-    border-radius: 12px;
+    width: 100%; max-width: 900px;
+    background: #fff; border-radius: 12px;
     padding: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
@@ -333,10 +316,8 @@
     aspect-ratio: 1;
     font-size: 30px;
     background: #f7f7fa;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.1s;
+    border: none; border-radius: 8px;
+    cursor: pointer; transition: 0.1s;
     display: flex; align-items: center; justify-content: center;
   }
   .emoji-item:hover { background: #eef2ff; transform: scale(1.1); }
@@ -428,7 +409,6 @@
     </div>
   </div>
 
-  <!-- Управление картинкой -->
   <div class="controls" id="imgControls">
     <span style="font-size:13px;color:#888">Картинка:</span>
     <div class="ctrl-group">
@@ -440,7 +420,6 @@
     <button id="imgFit">Вписать</button>
   </div>
 
-  <!-- Управление стикером -->
   <div class="controls" id="stickerControls">
     <span class="ctrl-label">Стикер:</span>
     <div class="ctrl-group">
@@ -457,7 +436,6 @@
     <button id="stkDelete">🗑 Удалить</button>
   </div>
 
-  <!-- Управление текстом -->
   <div class="controls" id="textControls">
     <span class="ctrl-label">Текст:</span>
     <input type="text" id="txtContent" placeholder="Текст...">
@@ -522,7 +500,6 @@
     <button id="txtDelete">🗑 Удалить</button>
   </div>
 
-  <!-- Управление плашкой -->
   <div class="controls" id="blockControls">
     <span class="ctrl-label">Плашка:</span>
     <div class="ctrl-group">
@@ -546,7 +523,6 @@
     <button id="blkDelete">🗑 Удалить</button>
   </div>
 
-  <!-- Управление рамкой -->
   <div class="controls" id="frameControls">
     <span class="ctrl-label">Рамка:</span>
     <div class="ctrl-group">
@@ -572,7 +548,6 @@
     </div>
   </div>
 
-  <!-- Быстрые смайлики -->
   <div class="emoji-section">
     <h3>Быстрые смайлики — кликни, и он появится на холсте</h3>
     <div class="emoji-grid" id="emojiGrid"></div>
@@ -624,6 +599,7 @@
 <script type="module">
 import { removeBackground } from 'https://esm.sh/@imgly/background-removal@1.7.0';
 
+// ============ ВСЕ DOM-ССЫЛКИ ============
 const $ = id => document.getElementById(id);
 const drop = $('drop'), file = $('file'), status = $('status');
 const panel = $('panel'), editorWrap = $('editorWrap'), editorStage = $('editorStage');
@@ -667,8 +643,13 @@ let activeSticker = null;
 let zCounter = 10;
 let cutoutState = { x: 0, y: 0, w: 0, h: 0, naturalW: 0, naturalH: 0 };
 
-// Смайлики для быстрой вставки
 const emojis = ['😀','😂','🥰','😎','🤩','🥳','😇','🤔','🤯','😴','🤖','👽','💀','👻','🎃','🐱','🐶','🦊','🐼','🦁','🐸','🦄','🐉','🌸','🌺','🌈','⭐','✨','💫','🔥','💧','❄️','⚡','💥','❤️','🧡','💛','💚','💙','💜','🖤','👍','👎','👏','🙏','💪','✌️','🤝','👑','💎','🎯','🎨','🎭','🎁','🎉','🎊','🏆','🥇','⚽','🏀','🎮','🎲','🍕','🍔','🍟','🍩','🍰','🍦','🍓','🍉','☕','🍺'];
+
+// ============ ФУНКЦИЯ СТАТУСА (ОНА БЫЛА ПОТЕРЯНА!) ============
+function setStatus(text, cls = '') {
+  status.className = 'status ' + cls;
+  status.innerHTML = text;
+}
 
 // ============ ЗАГРУЗКА КАРТИНКИ ============
 drop.addEventListener('click', () => file.click());
@@ -793,13 +774,12 @@ function selectCutout() {
   highlightLayer(cutout);
 }
 
-// ============ СТИКЕРЫ / ЭМОДЗИ ============
+// ============ СТИКЕРЫ ============
 function addSticker(src) {
   const el = document.createElement('div');
   el.className = 'sticker';
-  const size = 120;
-  el.style.width = size + 'px';
-  el.style.height = size + 'px';
+  el.style.width = '120px';
+  el.style.height = '120px';
   el.style.left = '100px';
   el.style.top = '100px';
   el.style.zIndex = ++zCounter;
@@ -828,7 +808,6 @@ function addSticker(src) {
   return el;
 }
 
-// Сгенерировать SVG-картинку с эмодзи
 function emojiToSvgUrl(emoji) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
     <text x="100" y="100" font-size="170" text-anchor="middle" dominant-baseline="central" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif">${emoji}</text>
@@ -836,7 +815,6 @@ function emojiToSvgUrl(emoji) {
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 
-// Заполняем галерею эмодзи
 emojis.forEach(e => {
   const btn = document.createElement('button');
   btn.className = 'emoji-item';
@@ -845,7 +823,6 @@ emojis.forEach(e => {
   emojiGrid.appendChild(btn);
 });
 
-// Загрузка своей картинки как стикера
 stickerUpload.addEventListener('change', e => {
   const f = e.target.files[0];
   if (!f) return;
@@ -862,7 +839,6 @@ function selectSticker(el) {
   activeSticker = el;
   hideAllControls();
   stickerControls.classList.add('show');
-
   const rot = parseFloat(el.dataset.rotate || 0);
   stkRotate.value = rot;
   stkRotateLabel.textContent = rot + '°';
@@ -871,12 +847,10 @@ function selectSticker(el) {
   stkOpacityLabel.textContent = op + '%';
   highlightLayer(el);
 }
-
 function deselectSticker() {
   document.querySelectorAll('.sticker').forEach(s => s.classList.remove('active'));
   activeSticker = null;
 }
-
 function applyStickerTransform(el) {
   const rot = parseFloat(el.dataset.rotate || 0);
   const flip = el.dataset.flip === 'on';
@@ -934,7 +908,6 @@ function applyFrame() {
   const r = parseInt(frameRadius.value);
   const c = frameColor.value;
   if (!on) {
-    frameBorder.style.border = 'none';
     frameBorder.style.display = 'none';
     return;
   }
@@ -1005,7 +978,7 @@ bgUpload.addEventListener('change', e => {
   bgGrid.prepend(item);
 });
 
-// ============ DRAG ============
+// ============ DRAG / RESIZE ============
 function makeDraggable(el, opts) {
   let dragging = false, startX, startY, start;
   const onDown = (cx, cy) => {
@@ -1426,7 +1399,6 @@ dl.addEventListener('click', async () => {
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
 
-  // Фон
   if (currentBg.type === 'transparent') {
     // пусто
   } else if (currentBg.type === 'color') {
@@ -1549,7 +1521,6 @@ dl.addEventListener('click', async () => {
     }
   }
 
-  // Рамка (рисуется последней, поверх всего)
   if (frameOn.checked) {
     const w = parseInt(frameWidth.value);
     const r = parseInt(frameRadius.value);
