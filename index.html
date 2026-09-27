@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Редактор: фон + стикеры + 3D-текст + изгиб</title>
+<title>Редактор: фон + стикеры + 3D-текст</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,13 +110,13 @@
   .cutout:hover, .sticker:hover { outline: 1px dashed rgba(59,130,246,0.5); }
   .cutout.active, .sticker.active { outline: 2px solid #3b82f6; }
   .cutout .handle, .sticker .handle {
-    position: absolute; width: 16px; height: 16px;
+    position: absolute; width: 18px; height: 18px;
     background: #3b82f6; border: 2px solid #fff; border-radius: 50%;
     display: none; z-index: 4;
   }
   .cutout.active .handle, .sticker.active .handle { display: block; }
-  .cutout .handle.br, .sticker .handle.br { right: -8px; bottom: -8px; cursor: nwse-resize; }
-  .cutout .handle.tl, .sticker .handle.tl { left: -8px; top: -8px; cursor: nwse-resize; }
+  .cutout .handle.br, .sticker .handle.br { right: -9px; bottom: -9px; cursor: nwse-resize; }
+  .cutout .handle.tl, .sticker .handle.tl { left: -9px; top: -9px; cursor: nwse-resize; }
   .cutout .del, .sticker .del {
     position: absolute; top: -12px; right: -12px;
     width: 24px; height: 24px;
@@ -128,14 +128,12 @@
   }
   .cutout.active .del, .sticker.active .del { display: block; }
 
-  /* Текстовый блок — контейнер для SVG с текстом */
   .text-block {
     position: absolute;
     cursor: move;
     user-select: none;
     padding: 4px 8px;
     border: 1px dashed transparent;
-    max-width: 90%;
     line-height: 1.2;
     font-family: 'Inter', sans-serif;
     touch-action: none;
@@ -152,7 +150,15 @@
     z-index: 5;
   }
   .text-block.active .del { display: block; }
-  .text-block svg { display: block; overflow: visible; }
+  .text-block .handle {
+    position: absolute; width: 18px; height: 18px;
+    background: #3b82f6; border: 2px solid #fff; border-radius: 50%;
+    display: none; z-index: 4;
+  }
+  .text-block.active .handle { display: block; }
+  .text-block .handle.br { right: -9px; bottom: -9px; cursor: nwse-resize; }
+  .text-block .handle.tl { left: -9px; top: -9px; cursor: nwse-resize; }
+  .text-block svg { display: block; overflow: visible; pointer-events: none; }
 
   .color-block {
     position: absolute;
@@ -177,13 +183,13 @@
   }
   .color-block.active .del { display: block; }
   .color-block .handle {
-    position: absolute; width: 16px; height: 16px;
+    position: absolute; width: 18px; height: 18px;
     background: #3b82f6; border: 2px solid #fff; border-radius: 50%;
     display: none; z-index: 4;
   }
   .color-block.active .handle { display: block; }
-  .color-block .handle.br { right: -8px; bottom: -8px; cursor: nwse-resize; }
-  .color-block .handle.tl { left: -8px; top: -8px; cursor: nwse-resize; }
+  .color-block .handle.br { right: -9px; bottom: -9px; cursor: nwse-resize; }
+  .color-block .handle.tl { left: -9px; top: -9px; cursor: nwse-resize; }
 
   .layers-panel {
     width: 260px;
@@ -245,12 +251,12 @@
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     width: 100%;
-    max-width: 1200px;
+    max-width: 1300px;
   }
   .controls.show { display: flex; }
   .controls input[type=text] {
     padding: 8px 12px; border: 1px solid #d0d0d8;
-    border-radius: 8px; font-size: 14px; width: 160px;
+    border-radius: 8px; font-size: 14px; width: 150px;
   }
   .controls input[type=number] {
     padding: 8px; border: 1px solid #d0d0d8;
@@ -368,9 +374,9 @@
     .size-bar { padding: 6px 8px; font-size: 11px; gap: 4px; }
     .size-bar button { padding: 4px 7px; font-size: 11px; }
     .controls { padding: 10px 8px; gap: 8px; }
-    .controls input[type=text] { width: 120px; font-size: 13px; }
+    .controls input[type=text] { width: 110px; font-size: 13px; }
     .controls input[type=number] { width: 55px; font-size: 13px; }
-    .controls select { font-size: 13px; max-width: 130px; padding: 7px 8px; }
+    .controls select { font-size: 13px; max-width: 120px; padding: 7px 8px; }
     .ctrl-divider { display: none; }
     .ctrl-group { gap: 4px; }
     .ctrl-label { font-size: 11px; }
@@ -391,7 +397,7 @@
 </head>
 <body>
 
-<h1>🪄 Редактор: фон + стикеры + 3D-текст + изгиб</h1>
+<h1>🪄 Редактор: фон + стикеры + 3D-текст</h1>
 <div class="sub">Несколько картинок, стикеры, текст, плашки, слои, 3D-буквы, изгиб</div>
 
 <div class="drop" id="drop">
@@ -461,7 +467,7 @@
     <button id="stkDelete">🗑 Удалить</button>
   </div>
 
-  <!-- ТЕКСТ с 3D и изгибом -->
+  <!-- ТЕКСТ с 3D + изгибом + полный контроль -->
   <div class="controls" id="textControls">
     <span class="ctrl-label">Текст:</span>
     <input type="text" id="txtContent" placeholder="Текст...">
@@ -487,12 +493,18 @@
 
     <div class="ctrl-group">
       <span class="ctrl-label">Размер:</span>
-      <input type="number" id="txtSize" value="48" min="8" max="300">
+      <input type="range" id="txtSizeRange" min="10" max="300" value="60" style="width:120px">
+      <span id="txtSizeLabel" style="font-size:12px;color:#666;width:40px">60</span>
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">Цвет:</span>
+      <span class="ctrl-label">Лицо:</span>
       <input type="color" id="txtColor" value="#ffffff">
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">Бок:</span>
+      <input type="color" id="txtSideColor" value="#1e40af">
     </div>
 
     <div class="ctrl-group">
@@ -527,14 +539,30 @@
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">3D-цвет:</span>
-      <input type="color" id="txt3dColor" value="#1e40af">
+      <span class="ctrl-label">Глубина:</span>
+      <input type="range" id="txt3dDepth" min="1" max="20" value="6" style="width:100px">
+      <span id="txt3dLabel" style="font-size:12px;color:#666;width:30px">6</span>
+    </div>
+
+    <div class="ctrl-divider"></div>
+
+    <!-- ПОВОРОТЫ -->
+    <div class="ctrl-group">
+      <span class="ctrl-label">Поворот Z:</span>
+      <input type="range" id="txtRotate" min="-180" max="180" value="0" style="width:100px">
+      <span id="txtRotateLabel" style="font-size:12px;color:#666;width:38px">0°</span>
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">Глубина:</span>
-      <input type="range" id="txt3dDepth" min="1" max="15" value="5" style="width:80px">
-      <span id="txt3dLabel" style="font-size:12px;color:#666;width:30px">5</span>
+      <span class="ctrl-label">Поворот Y:</span>
+      <input type="range" id="txtRotateY" min="-80" max="80" value="0" style="width:100px">
+      <span id="txtRotateYLabel" style="font-size:12px;color:#666;width:38px">0°</span>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">Поворот X:</span>
+      <input type="range" id="txtRotateX" min="-80" max="80" value="0" style="width:100px">
+      <span id="txtRotateXLabel" style="font-size:12px;color:#666;width:38px">0°</span>
     </div>
 
     <div class="ctrl-divider"></div>
@@ -542,22 +570,16 @@
     <!-- ИЗГИБ -->
     <div class="ctrl-group">
       <span class="ctrl-label">Изгиб:</span>
-      <input type="range" id="txtCurve" min="-100" max="100" value="0" style="width:120px">
-      <span id="txtCurveLabel" style="font-size:12px;color:#666;width:40px">0</span>
+      <input type="range" id="txtCurve" min="-100" max="100" value="0" style="width:100px">
+      <span id="txtCurveLabel" style="font-size:12px;color:#666;width:35px">0</span>
     </div>
 
     <div class="ctrl-group">
       <span class="ctrl-label">Ось:</span>
       <select id="txtCurveAxis">
-        <option value="h">Горизонтально</option>
-        <option value="v">Вертикально</option>
+        <option value="h">Горизонт.</option>
+        <option value="v">Вертикал.</option>
       </select>
-    </div>
-
-    <div class="ctrl-group">
-      <span class="ctrl-label">Поворот:</span>
-      <input type="range" id="txtRotate" min="-180" max="180" value="0" style="width:100px">
-      <span id="txtRotateLabel" style="font-size:12px;color:#666;width:35px">0°</span>
     </div>
 
     <button id="txtDelete">🗑 Удалить</button>
@@ -675,11 +697,15 @@ const stkRotate = $('stkRotate'), stkRotateLabel = $('stkRotateLabel');
 const stkOpacity = $('stkOpacity'), stkOpacityLabel = $('stkOpacityLabel');
 const stkFlipH = $('stkFlipH'), stkDelete = $('stkDelete');
 const textControls = $('textControls');
-const txtContent = $('txtContent'), txtSize = $('txtSize'), txtColor = $('txtColor');
+const txtContent = $('txtContent');
+const txtSizeRange = $('txtSizeRange'), txtSizeLabel = $('txtSizeLabel');
+const txtColor = $('txtColor'), txtSideColor = $('txtSideColor');
 const txtWeight = $('txtWeight'), txtFont = $('txtFont'), txtDelete = $('txtDelete');
-const txtStyle = $('txtStyle'), txt3dColor = $('txt3dColor'), txt3dDepth = $('txt3dDepth'), txt3dLabel = $('txt3dLabel');
-const txtCurve = $('txtCurve'), txtCurveLabel = $('txtCurveLabel'), txtCurveAxis = $('txtCurveAxis');
+const txtStyle = $('txtStyle'), txt3dDepth = $('txt3dDepth'), txt3dLabel = $('txt3dLabel');
 const txtRotate = $('txtRotate'), txtRotateLabel = $('txtRotateLabel');
+const txtRotateY = $('txtRotateY'), txtRotateYLabel = $('txtRotateYLabel');
+const txtRotateX = $('txtRotateX'), txtRotateXLabel = $('txtRotateXLabel');
+const txtCurve = $('txtCurve'), txtCurveLabel = $('txtCurveLabel'), txtCurveAxis = $('txtCurveAxis');
 const addTextBtn = $('addText');
 const blockControls = $('blockControls');
 const blkBg = $('blkBg'), blkRadius = $('blkRadius'), blkOpacity = $('blkOpacity'), blkOpacityLabel = $('blkOpacityLabel');
@@ -710,7 +736,7 @@ function setStatus(text, cls = '') {
   status.innerHTML = text;
 }
 
-// ============ ЗАГРУЗКА КАРТИНОК ============
+// ============ ЗАГРУЗКА ============
 drop.addEventListener('click', () => file.click());
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -1270,54 +1296,59 @@ function highlightLayer(el) {
   });
 }
 
-// ============ ТЕКСТ с 3D + изгибом ============
+// ============ ТЕКСТ ============
 function addText() {
   const el = document.createElement('div');
   el.className = 'text-block';
-  el.style.left = '40px'; el.style.top = '40px';
+  el.style.left = '60px'; el.style.top = '80px';
   el.style.zIndex = ++zCounter;
 
-  // Данные текста
-  el.dataset.text = 'Ваш текст';
+  el.dataset.text = 'Текст';
   el.dataset.font = 'Russo One';
-  el.dataset.size = '48';
+  el.dataset.size = '60';
   el.dataset.color = '#ffffff';
+  el.dataset.sideColor = '#1e40af';
   el.dataset.weight = '800';
   el.dataset.style = '3d-classic';
-  el.dataset.color3d = '#1e40af';
-  el.dataset.depth = '5';
+  el.dataset.depth = '6';
   el.dataset.curve = '0';
   el.dataset.curveAxis = 'h';
   el.dataset.rotate = '0';
+  el.dataset.rotateY = '0';
+  el.dataset.rotateX = '0';
 
   const del = document.createElement('button');
   del.className = 'del'; del.textContent = '×';
   del.addEventListener('click', e => { e.stopPropagation(); el.remove(); hideAllControls(); rebuildLayers(); });
   el.appendChild(del);
 
+  const h1 = document.createElement('div'); h1.className = 'handle tl'; el.appendChild(h1);
+  const h2 = document.createElement('div'); h2.className = 'handle br'; el.appendChild(h2);
+
   editorStage.appendChild(el);
   renderText(el);
   makeDraggable(el, { onStart: () => selectText(el) });
+  makeTextResizable(el);
   selectText(el);
   rebuildLayers();
 }
 addTextBtn.addEventListener('click', addText);
 
-// ============ РЕНДЕР ТЕКСТА (SVG) ============
 function renderText(el) {
-  const text = el.dataset.text || 'Ваш текст';
+  const text = el.dataset.text || 'Текст';
   const font = el.dataset.font || 'Russo One';
-  const size = parseFloat(el.dataset.size) || 48;
+  const size = parseFloat(el.dataset.size) || 60;
   const color = el.dataset.color || '#ffffff';
+  const sideColor = el.dataset.sideColor || '#1e40af';
   const weight = el.dataset.weight || '800';
   const style = el.dataset.style || 'none';
-  const c3d = el.dataset.color3d || '#1e40af';
-  const depth = parseInt(el.dataset.depth || 5);
+  const depth = parseInt(el.dataset.depth || 6);
   const curve = parseInt(el.dataset.curve || 0);
   const axis = el.dataset.curveAxis || 'h';
-  const rot = parseFloat(el.dataset.rotate || 0);
+  const rotZ = parseFloat(el.dataset.rotate || 0);
+  const rotY = parseFloat(el.dataset.rotateY || 0);
+  const rotX = parseFloat(el.dataset.rotateX || 0);
 
-  // Размер холста
   const pad = depth * 3 + 40;
   const fontSize = size;
   const textWidth = text.length * fontSize * 0.62 + pad * 2;
@@ -1325,26 +1356,9 @@ function renderText(el) {
   const W = Math.max(textWidth, 200);
   const H = Math.max(textHeight, 150);
 
-  // Уникальный id для clip-path
-  const clipId = 'clip_' + Math.random().toString(36).slice(2, 8);
-
-  // Параметры изгиба
   const curveAmount = curve / 100;
-  const curveRadius = axis === 'h' ? W / 2 : H / 2;
-  const bendY = curveAmount * (axis === 'h' ? fontSize * 1.2 : 0);
-  const bendX = curveAmount * (axis === 'v' ? fontSize * 1.2 : 0);
+  const bendY = curveAmount * fontSize * 1.2;
 
-  // Верхний путь для изгиба
-  let topPath, bottomPath;
-  if (axis === 'h') {
-    topPath = `M ${pad},${H/2 + bendY} Q ${W/2},${H/2 - bendY} ${W - pad},${H/2 + bendY}`;
-    bottomPath = `M ${W - pad},${H/2 + bendY} Q ${W/2},${H/2 - bendY} ${pad},${H/2 + bendY}`;
-  } else {
-    topPath = `M ${pad},${H/2 + bendX} Q ${W/2},${H/2 - bendX} ${W - pad},${H/2 + bendX}`;
-    bottomPath = `M ${W - pad},${H/2 + bendX} Q ${W/2},${H/2 - bendX} ${pad},${H/2 + bendX}`;
-  }
-
-  // Собираем SVG
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
   svg.setAttribute('width', W);
@@ -1353,27 +1367,13 @@ function renderText(el) {
   svg.style.display = 'block';
   svg.style.overflow = 'visible';
 
-  // Defs — clipPath для текста (чтобы обрезать по фигуре)
   const defs = document.createElementNS(svgNS, 'defs');
-  defs.innerHTML = `
-    <clipPath id="${clipId}">
-      <path d="${topPath} L ${pad},${H/2 + (axis==='h'?bendY:bendX)} L ${pad},${H/2} Z" />
-    </clipPath>
-  `;
   svg.appendChild(defs);
 
-  // Группа с поворотом вокруг центра
-  const g = document.createElementNS(svgNS, 'g');
-  if (rot) {
-    g.setAttribute('transform', `rotate(${rot} ${W/2} ${H/2})`);
-  }
-
-  // === Текст на пути через <textPath> ===
-  // Создаём path в defs для textPath
   const textPathId = 'tp_' + Math.random().toString(36).slice(2, 8);
   const textPathD = axis === 'h'
     ? `M ${pad},${H/2} Q ${W/2},${H/2 - bendY*2} ${W - pad},${H/2}`
-    : `M ${pad},${H/2} Q ${W/2},${H/2 - bendX*2} ${W - pad},${H/2}`;
+    : `M ${pad},${H/2} Q ${W/2},${H/2 - bendY*2} ${W - pad},${H/2}`;
 
   const pathDef = document.createElementNS(svgNS, 'path');
   pathDef.setAttribute('id', textPathId);
@@ -1381,21 +1381,45 @@ function renderText(el) {
   pathDef.setAttribute('fill', 'none');
   defs.appendChild(pathDef);
 
-  // Стили теней — для 3D-эффектов
+  const g = document.createElementNS(svgNS, 'g');
+  const cx = W / 2, cy = H / 2;
+
+  // 3D-перспектива через matrix (грубый аналог)
+  // Y — поворот вокруг вертикальной оси (псевдо 3D через scaleX)
+  // X — поворот вокруг горизонтальной оси (псевдо 3D через scaleY)
+  const scaleX = Math.cos(rotY * Math.PI / 180);
+  const scaleY = Math.cos(rotX * Math.PI / 180);
+  const skewX = Math.sin(rotY * Math.PI / 180) * 0.3;
+  const skewY = Math.sin(rotX * Math.PI / 180) * 0.3;
+
+  // Собираем матрицу: сначала сдвиг в центр, потом масштаб/skew, потом поворот Z, потом обратно
+  const cosZ = Math.cos(rotZ * Math.PI / 180);
+  const sinZ = Math.sin(rotZ * Math.PI / 180);
+
+  // Комбинируем вручную: T(-cx,-cy) * M * T(cx,cy)
+  // M = rotZ * scale*skew
+  const a = cosZ * scaleX;
+  const b = sinZ * scaleX + skewY;
+  const c2 = -sinZ * scaleY + skewX;
+  const d = cosZ * scaleY;
+  const e = cx - (a * cx + c2 * cy);
+  const f = cy - (b * cx + d * cy);
+
+  g.setAttribute('transform', `matrix(${a} ${b} ${c2} ${d} ${e} ${f})`);
+
   const textAttrs = {
     'font-family': `'${font}', sans-serif`,
     'font-size': fontSize,
     'font-weight': weight,
     'text-anchor': 'middle',
-    'dominant-baseline': 'middle',
-    'startOffset': '50%'
+    'dominant-baseline': 'middle'
   };
 
-  // helper для создания textPath
   function makeTextPath(fillColor, dx, dy) {
     const t = document.createElementNS(svgNS, 'text');
     for (const k in textAttrs) t.setAttribute(k, textAttrs[k]);
     if (dx || dy) t.setAttribute('transform', `translate(${dx || 0} ${dy || 0})`);
+    t.setAttribute('fill', fillColor);
     const tp = document.createElementNS(svgNS, 'textPath');
     tp.setAttribute('href', '#' + textPathId);
     tp.setAttribute('startOffset', '50%');
@@ -1405,118 +1429,101 @@ function renderText(el) {
     return t;
   }
 
-  // Рисуем 3D-слои
-  if (style === '3d-classic') {
-    for (let i = depth; i >= 1; i--) {
-      g.appendChild(makeTextPath(c3d, i, i));
+  // 3D-эффекты
+  if (style === '3d-classic' || style === '3d-deep' || style === '3d-arc' || style === '3d-sphere' || style === 'gold' || style === 'fire' || style === 'emboss') {
+    const layers = style === '3d-deep' ? depth * 2 : depth;
+    for (let i = layers; i >= 1; i--) {
+      let col = sideColor;
+      let dx = i, dy = i;
+      if (style === '3d-deep') {
+        col = shadeColor(sideColor, -30 * (i / (depth*2)));
+      } else if (style === '3d-arc') {
+        const ang = Math.PI * i / (depth + 1);
+        dx = Math.cos(ang) * i * 1.5;
+        dy = Math.sin(ang) * i * 1.5;
+      } else if (style === '3d-sphere') {
+        col = shadeColor(sideColor, -20 * (i / depth));
+      } else if (style === 'gold') {
+        col = '#b45309';
+      } else if (style === 'fire') {
+        col = i < depth / 2 ? '#f59e0b' : '#dc2626';
+        dx = 0; dy = i;
+      } else if (style === 'emboss') {
+        col = i % 2 ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)';
+      }
+      g.appendChild(makeTextPath(col, dx, dy));
+      if (style === '3d-arc') {
+        g.appendChild(makeTextPath(col, -dx, dy));
+      }
+      if (style === '3d-sphere') {
+        g.appendChild(makeTextPath(shadeColor(sideColor, 30), -i * 0.7, -i * 0.7));
+      }
     }
-    g.appendChild(makeTextPath(color, 0, 0));
-  } else if (style === '3d-deep') {
-    for (let i = depth * 2; i >= 1; i--) {
-      g.appendChild(makeTextPath(shadeColor(c3d, -30 * (i / (depth*2))), i, i));
-    }
-    g.appendChild(makeTextPath(color, 0, 0));
-  } else if (style === '3d-arc') {
-    for (let i = depth; i >= 1; i--) {
-      const ang = Math.PI * i / (depth + 1);
-      g.appendChild(makeTextPath(c3d, Math.cos(ang) * i * 1.5, Math.sin(ang) * i * 1.5));
-      g.appendChild(makeTextPath(c3d, -Math.cos(ang) * i * 1.5, Math.sin(ang) * i * 1.5));
-    }
-    g.appendChild(makeTextPath(color, 0, 0));
-  } else if (style === '3d-sphere') {
-    for (let i = depth; i >= 1; i--) {
-      const t1 = makeTextPath('rgba(0,0,0,0.3)', i, i);
-      g.appendChild(t1);
-      const t2 = makeTextPath('rgba(255,255,255,0.3)', -i, -i);
-      g.appendChild(t2);
-    }
+    // Лицевая сторона
     g.appendChild(makeTextPath(color, 0, 0));
   } else if (style === 'outline') {
     for (let r = 1; r <= depth; r++) {
       for (let ang = 0; ang < 360; ang += 30) {
         const rad = ang * Math.PI / 180;
-        g.appendChild(makeTextPath(c3d, Math.cos(rad) * r, Math.sin(rad) * r));
+        g.appendChild(makeTextPath(sideColor, Math.cos(rad) * r, Math.sin(rad) * r));
       }
     }
     g.appendChild(makeTextPath(color, 0, 0));
-  } else if (style === 'gold') {
-    for (let i = depth; i >= 1; i--) {
-      g.appendChild(makeTextPath('#b45309', i, i));
-    }
-    const final = makeTextPath('#fbbf24', 0, 0);
-    g.appendChild(final);
-  } else if (style === 'fire') {
-    for (let i = depth; i >= 1; i--) {
-      const col = i < depth / 2 ? '#f59e0b' : '#dc2626';
-      g.appendChild(makeTextPath(col, 0, i));
-    }
-    g.appendChild(makeTextPath(color, 0, 0));
   } else if (style === 'neon') {
-    const t = makeTextPath(color, 0, 0);
-    t.setAttribute('filter', 'url(#neonGlow)');
-    // Создаём фильтр
     const filter = document.createElementNS(svgNS, 'filter');
-    filter.setAttribute('id', 'neonGlow');
+    filter.setAttribute('id', 'neon_' + textPathId);
     filter.innerHTML = `
       <feGaussianBlur stdDeviation="${depth}" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    `;
+      </feMerge>`;
     defs.appendChild(filter);
+    const t = makeTextPath(color, 0, 0);
+    t.setAttribute('filter', `url(#neon_${textPathId})`);
     g.appendChild(t);
   } else if (style === 'glow') {
     const filter = document.createElementNS(svgNS, 'filter');
-    filter.setAttribute('id', 'glow_' + clipId);
+    filter.setAttribute('id', 'glow_' + textPathId);
     filter.innerHTML = `
       <feGaussianBlur stdDeviation="${depth}" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    `;
+      </feMerge>`;
     defs.appendChild(filter);
     const t = makeTextPath(color, 0, 0);
-    t.setAttribute('filter', `url(#glow_${clipId})`);
+    t.setAttribute('filter', `url(#glow_${textPathId})`);
     g.appendChild(t);
-  } else if (style === 'emboss') {
-    for (let i = depth; i >= 1; i--) {
-      g.appendChild(makeTextPath('rgba(0,0,0,0.4)', i, i));
-      g.appendChild(makeTextPath('rgba(255,255,255,0.4)', -i, -i));
-    }
-    g.appendChild(makeTextPath(color, 0, 0));
   } else if (style === 'shadow') {
     const filter = document.createElementNS(svgNS, 'filter');
-    filter.setAttribute('id', 'shadow_' + clipId);
+    filter.setAttribute('id', 'shadow_' + textPathId);
     filter.innerHTML = `
       <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
-      <feOffset dx="3" dy="4" result="offsetblur"/>
+      <feOffset dx="4" dy="5" result="offsetblur"/>
       <feMerge>
         <feMergeNode/>
         <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    `;
+      </feMerge>`;
     defs.appendChild(filter);
     const t = makeTextPath(color, 0, 0);
-    t.setAttribute('filter', `url(#shadow_${clipId})`);
+    t.setAttribute('filter', `url(#shadow_${textPathId})`);
     g.appendChild(t);
   } else {
-    // обычный
     g.appendChild(makeTextPath(color, 0, 0));
   }
 
   svg.appendChild(g);
 
-  // Очищаем el и вставляем SVG
-  // Оставляем только кнопку удаления
   const del = el.querySelector('.del');
+  const h1 = el.querySelector('.handle.tl');
+  const h2 = el.querySelector('.handle.br');
   el.innerHTML = '';
   if (del) el.appendChild(del);
+  if (h1) el.appendChild(h1);
+  if (h2) el.appendChild(h2);
   el.appendChild(svg);
-  el.dataset.width = W;
-  el.dataset.height = H;
 }
 
 function shadeColor(hex, percent) {
@@ -1525,6 +1532,51 @@ function shadeColor(hex, percent) {
   const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + percent));
   const B = Math.max(0, Math.min(255, (num & 0x0000FF) + percent));
   return '#' + ((R << 16) | (G << 8) | B).toString(16).padStart(6, '0');
+}
+
+// Ресайз текста через уголки — меняем размер шрифта
+function makeTextResizable(el) {
+  const handles = el.querySelectorAll('.handle');
+  handles.forEach(h => {
+    let resizing = false, startX, startY, startSize, dir;
+    const start = (cx, cy) => {
+      resizing = true;
+      startX = cx; startY = cy;
+      startSize = parseFloat(el.dataset.size) || 60;
+      dir = h.classList.contains('tl') ? -1 : 1;
+    };
+    const move = (cx, cy) => {
+      if (!resizing) return;
+      const dx = cx - startX;
+      const dy = cy - startY;
+      const delta = (dx + dy) * 0.3 * dir;
+      const newSize = Math.max(10, Math.min(300, startSize + delta));
+      el.dataset.size = Math.round(newSize);
+      txtSizeRange.value = Math.round(newSize);
+      txtSizeLabel.textContent = Math.round(newSize);
+      renderText(el);
+    };
+    const end = () => { resizing = false; };
+
+    h.addEventListener('mousedown', e => {
+      start(e.clientX, e.clientY);
+      e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+    document.addEventListener('mouseup', end);
+
+    h.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      start(t.clientX, t.clientY);
+      e.stopPropagation();
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (!resizing) return;
+      const t = e.touches[0];
+      move(t.clientX, t.clientY);
+    }, { passive: true });
+    document.addEventListener('touchend', end);
+  });
 }
 
 function selectText(el) {
@@ -1537,19 +1589,24 @@ function selectText(el) {
   textControls.classList.add('show');
 
   txtContent.value = el.dataset.text || '';
-  txtSize.value = parseInt(el.dataset.size) || 48;
+  txtSizeRange.value = parseInt(el.dataset.size) || 60;
+  txtSizeLabel.textContent = el.dataset.size || 60;
   txtColor.value = el.dataset.color || '#ffffff';
+  txtSideColor.value = el.dataset.sideColor || '#1e40af';
   txtWeight.value = el.dataset.weight || '800';
   txtFont.value = el.dataset.font || 'Russo One';
   txtStyle.value = el.dataset.style || 'none';
-  txt3dColor.value = el.dataset.color3d || '#1e40af';
-  txt3dDepth.value = el.dataset.depth || 5;
-  txt3dLabel.textContent = el.dataset.depth || 5;
+  txt3dDepth.value = el.dataset.depth || 6;
+  txt3dLabel.textContent = el.dataset.depth || 6;
+  txtRotate.value = el.dataset.rotate || 0;
+  txtRotateLabel.textContent = (el.dataset.rotate || 0) + '°';
+  txtRotateY.value = el.dataset.rotateY || 0;
+  txtRotateYLabel.textContent = (el.dataset.rotateY || 0) + '°';
+  txtRotateX.value = el.dataset.rotateX || 0;
+  txtRotateXLabel.textContent = (el.dataset.rotateX || 0) + '°';
   txtCurve.value = el.dataset.curve || 0;
   txtCurveLabel.textContent = el.dataset.curve || 0;
   txtCurveAxis.value = el.dataset.curveAxis || 'h';
-  txtRotate.value = el.dataset.rotate || 0;
-  txtRotateLabel.textContent = (el.dataset.rotate || 0) + '°';
   highlightLayer(el);
 }
 function deselectText() {
@@ -1563,15 +1620,30 @@ txtContent.addEventListener('input', () => {
   renderText(activeText);
   rebuildLayers();
 });
-txtSize.addEventListener('input', () => { if (activeText) { activeText.dataset.size = txtSize.value; renderText(activeText); } });
+txtSizeRange.addEventListener('input', () => {
+  txtSizeLabel.textContent = txtSizeRange.value;
+  if (activeText) { activeText.dataset.size = txtSizeRange.value; renderText(activeText); }
+});
 txtColor.addEventListener('input', () => { if (activeText) { activeText.dataset.color = txtColor.value; renderText(activeText); } });
+txtSideColor.addEventListener('input', () => { if (activeText) { activeText.dataset.sideColor = txtSideColor.value; renderText(activeText); } });
 txtWeight.addEventListener('change', () => { if (activeText) { activeText.dataset.weight = txtWeight.value; renderText(activeText); } });
 txtFont.addEventListener('change', () => { if (activeText) { activeText.dataset.font = txtFont.value; renderText(activeText); } });
 txtStyle.addEventListener('change', () => { if (activeText) { activeText.dataset.style = txtStyle.value; renderText(activeText); } });
-txt3dColor.addEventListener('input', () => { if (activeText) { activeText.dataset.color3d = txt3dColor.value; renderText(activeText); } });
 txt3dDepth.addEventListener('input', () => {
   txt3dLabel.textContent = txt3dDepth.value;
   if (activeText) { activeText.dataset.depth = txt3dDepth.value; renderText(activeText); }
+});
+txtRotate.addEventListener('input', () => {
+  txtRotateLabel.textContent = txtRotate.value + '°';
+  if (activeText) { activeText.dataset.rotate = txtRotate.value; renderText(activeText); }
+});
+txtRotateY.addEventListener('input', () => {
+  txtRotateYLabel.textContent = txtRotateY.value + '°';
+  if (activeText) { activeText.dataset.rotateY = txtRotateY.value; renderText(activeText); }
+});
+txtRotateX.addEventListener('input', () => {
+  txtRotateXLabel.textContent = txtRotateX.value + '°';
+  if (activeText) { activeText.dataset.rotateX = txtRotateX.value; renderText(activeText); }
 });
 txtCurve.addEventListener('input', () => {
   txtCurveLabel.textContent = txtCurve.value;
@@ -1579,10 +1651,6 @@ txtCurve.addEventListener('input', () => {
 });
 txtCurveAxis.addEventListener('change', () => {
   if (activeText) { activeText.dataset.curveAxis = txtCurveAxis.value; renderText(activeText); }
-});
-txtRotate.addEventListener('input', () => {
-  txtRotateLabel.textContent = txtRotate.value + '°';
-  if (activeText) { activeText.dataset.rotate = txtRotate.value; renderText(activeText); }
 });
 txtDelete.addEventListener('click', () => { if (activeText) { activeText.remove(); hideAllControls(); activeText = null; rebuildLayers(); } });
 
